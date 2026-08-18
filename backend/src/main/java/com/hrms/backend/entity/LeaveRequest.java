@@ -20,8 +20,8 @@ public class LeaveRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "leave_request_id")
-    private Integer leaveRequestId;
+    @Column(name = "leave_id")
+    private Integer leaveId;
 
     @ManyToOne
     @JoinColumn(name = "employee_id", nullable = false)
@@ -48,8 +48,8 @@ public class LeaveRequest {
     @JoinColumn(name = "approved_by")
     private Employee approvedBy;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "requested_at", insertable = false, updatable = false)
+    private LocalDateTime requestedAt;
 
     public enum LeaveType {
         sick, vacation, emergency, maternity, paternity, unpaid
@@ -59,8 +59,8 @@ public class LeaveRequest {
         pending, approved, rejected
     }
 
-    public Integer getLeaveRequestId() { return leaveRequestId; }
-    public void setLeaveRequestId(Integer leaveRequestId) { this.leaveRequestId = leaveRequestId; }
+    public Integer getLeaveId() { return leaveId; }
+    public void setLeaveId(Integer leaveId) { this.leaveId = leaveId; }
 
     public Employee getEmployee() { return employee; }
     public void setEmployee(Employee employee) { this.employee = employee; }
@@ -83,5 +83,5 @@ public class LeaveRequest {
     public Employee getApprovedBy() { return approvedBy; }
     public void setApprovedBy(Employee approvedBy) { this.approvedBy = approvedBy; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getRequestedAt() { return requestedAt; }
 }

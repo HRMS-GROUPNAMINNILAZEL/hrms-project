@@ -1,7 +1,6 @@
 package com.hrms.backend.entity;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import jakarta.persistence.Column;
@@ -28,8 +27,8 @@ public class Attendance {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
-    @Column(name = "attendance_date", nullable = false)
-    private LocalDate attendanceDate;
+    @Column(name = "date", nullable = false)
+    private LocalDate date;
 
     @Column(name = "time_in")
     private LocalTime timeIn;
@@ -41,11 +40,8 @@ public class Attendance {
     @Column(nullable = false)
     private Status status = Status.present;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     public enum Status {
-        present, absent, late, half_day, on_leave
+        present, late, absent, on_leave
     }
 
     public Integer getAttendanceId() { return attendanceId; }
@@ -54,8 +50,8 @@ public class Attendance {
     public Employee getEmployee() { return employee; }
     public void setEmployee(Employee employee) { this.employee = employee; }
 
-    public LocalDate getAttendanceDate() { return attendanceDate; }
-    public void setAttendanceDate(LocalDate attendanceDate) { this.attendanceDate = attendanceDate; }
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate date) { this.date = date; }
 
     public LocalTime getTimeIn() { return timeIn; }
     public void setTimeIn(LocalTime timeIn) { this.timeIn = timeIn; }
@@ -65,6 +61,4 @@ public class Attendance {
 
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
 }

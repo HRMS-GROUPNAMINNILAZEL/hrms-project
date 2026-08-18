@@ -6,8 +6,6 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,28 +32,20 @@ public class Payroll {
     @Column(name = "pay_period_end", nullable = false)
     private LocalDate payPeriodEnd;
 
-    @Column(name = "basic_salary", nullable = false, precision = 10, scale = 2)
+    @Column(name = "basic_salary", nullable = false, precision = 12, scale = 2)
     private BigDecimal basicSalary;
 
-    @Column(precision = 10, scale = 2)
+    @Column(precision = 12, scale = 2)
     private BigDecimal deductions = BigDecimal.ZERO;
 
-    @Column(name = "net_pay", nullable = false, precision = 10, scale = 2)
+    @Column(precision = 12, scale = 2)
+    private BigDecimal bonuses = BigDecimal.ZERO;
+
+    @Column(name = "net_pay", nullable = false, precision = 12, scale = 2)
     private BigDecimal netPay;
 
-    @Column(name = "pay_date")
-    private LocalDate payDate;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status = Status.pending;
-
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    public enum Status {
-        pending, processed, paid
-    }
+    @Column(name = "generated_at", insertable = false, updatable = false)
+    private LocalDateTime generatedAt;
 
     public Integer getPayrollId() { return payrollId; }
     public void setPayrollId(Integer payrollId) { this.payrollId = payrollId; }
@@ -75,14 +65,11 @@ public class Payroll {
     public BigDecimal getDeductions() { return deductions; }
     public void setDeductions(BigDecimal deductions) { this.deductions = deductions; }
 
+    public BigDecimal getBonuses() { return bonuses; }
+    public void setBonuses(BigDecimal bonuses) { this.bonuses = bonuses; }
+
     public BigDecimal getNetPay() { return netPay; }
     public void setNetPay(BigDecimal netPay) { this.netPay = netPay; }
 
-    public LocalDate getPayDate() { return payDate; }
-    public void setPayDate(LocalDate payDate) { this.payDate = payDate; }
-
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getGeneratedAt() { return generatedAt; }
 }
