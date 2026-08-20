@@ -10,6 +10,8 @@ import com.hrms.backend.entity.User;
 import com.hrms.backend.exception.ResourceNotFoundException;
 import com.hrms.backend.repository.UserRepository;
 
+import org.springframework.security.authentication.BadCredentialsException;
+
 @Service
 public class UserService {
 
@@ -54,5 +56,23 @@ public class UserService {
     public void deleteUser(Integer userId) {
         User existing = getUserById(userId);
         userRepository.delete(existing);
+    }
+
+    // Checks username + plain-text password against the stored hash.
+    // Throws BadCredentialsException if the username doesn't exist or the password is wrong
+    // (kept as one generic error so we don't reveal which one was incorrect).
+    public User login(String username, String rawPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+
+        if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid username or password");
+        }
+
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new BadCredentialsException("This account has been deactivated");
+        }
+
+        return user;
     }
 }
