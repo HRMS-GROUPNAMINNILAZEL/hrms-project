@@ -46,7 +46,7 @@ public class LeaveRequest {
 
     @ManyToOne
     @JoinColumn(name = "approved_by")
-    private Employee approvedBy;
+    private User approvedBy;
 
     @Column(name = "requested_at", insertable = false, updatable = false)
     private LocalDateTime requestedAt;
@@ -80,8 +80,8 @@ public class LeaveRequest {
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
 
-    public Employee getApprovedBy() { return approvedBy; }
-    public void setApprovedBy(Employee approvedBy) { this.approvedBy = approvedBy; }
+    public User getApprovedBy() { return approvedBy; }
+    public void setApprovedBy(User approvedBy) { this.approvedBy = approvedBy; }
 
     public LocalDateTime getRequestedAt() { return requestedAt; }
 }

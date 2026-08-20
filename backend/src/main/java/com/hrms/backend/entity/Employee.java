@@ -1,8 +1,21 @@
 package com.hrms.backend.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "employees")
@@ -30,8 +43,13 @@ public class Employee {
     @Column(length = 100)
     private String position;
 
+    // Guards against infinite recursion the same way Department.departmentHead does:
+    // a manager is also an Employee with its own department/manager, so without this
+    // the nested manager's fields could re-enter the same cycle (e.g. if that
+    // manager's department head loops back here).
     @ManyToOne
     @JoinColumn(name = "manager_id")
+    @JsonIgnoreProperties({ "department", "manager" })
     private Employee manager;
 
     @Column(name = "hire_date", nullable = false)

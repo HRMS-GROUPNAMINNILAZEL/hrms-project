@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hrms.backend.entity.Employee;
 import com.hrms.backend.entity.LeaveRequest;
 import com.hrms.backend.services.LeaveRequestService;
 
@@ -60,22 +59,18 @@ public class LeaveRequestController {
         return ResponseEntity.ok(updated);
     }
 
-    // Body: { "approverId": 5 }
+    // Body: { "approverId": 5 } - approverId must belong to a user with role "admin"
     @PatchMapping("/{id}/approve")
     public ResponseEntity<LeaveRequest> approveLeaveRequest(@PathVariable("id") Integer leaveId,
                                                                @RequestBody Map<String, Integer> body) {
-        Employee approver = new Employee();
-        approver.setEmployeeId(body.get("approverId"));
-        return ResponseEntity.ok(leaveRequestService.approveLeaveRequest(leaveId, approver));
+        return ResponseEntity.ok(leaveRequestService.approveLeaveRequest(leaveId, body.get("approverId")));
     }
 
-    // Body: { "approverId": 5 }
+    // Body: { "approverId": 5 } - approverId must belong to a user with role "admin"
     @PatchMapping("/{id}/reject")
     public ResponseEntity<LeaveRequest> rejectLeaveRequest(@PathVariable("id") Integer leaveId,
                                                               @RequestBody Map<String, Integer> body) {
-        Employee approver = new Employee();
-        approver.setEmployeeId(body.get("approverId"));
-        return ResponseEntity.ok(leaveRequestService.rejectLeaveRequest(leaveId, approver));
+        return ResponseEntity.ok(leaveRequestService.rejectLeaveRequest(leaveId, body.get("approverId")));
     }
 
     @DeleteMapping("/{id}")

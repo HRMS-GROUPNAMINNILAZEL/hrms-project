@@ -3,18 +3,23 @@ package com.hrms.backend.services;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.hrms.backend.entity.Employee;
 import com.hrms.backend.entity.LeaveRequest;
+import com.hrms.backend.entity.User;
 import com.hrms.backend.exception.ResourceNotFoundException;
 import com.hrms.backend.repository.LeaveRequestRepository;
+import com.hrms.backend.repository.UserRepository;
 
 @Service
 public class LeaveRequestService {
 
     @Autowired
     private LeaveRequestRepository leaveRequestRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public List<LeaveRequest> getAllLeaveRequests() {
         return leaveRequestRepository.findAll();
@@ -50,14 +55,31 @@ public class LeaveRequestService {
         return leaveRequestRepository.save(existing);
     }
 
-    public LeaveRequest approveLeaveRequest(Integer leaveId, Employee approver) {
+    // Looks up the user making the request and confirms they're an admin.
+    // Throws if the user doesn't exist or isn't an admin - callers should not
+    // catch this, it's meant to propagate up to the GlobalExceptionHandler.
+    private User requireAdmin(Integer userId) {
+        if (userId == null) {
+            throw new AccessDeniedException("Only admins can approve or reject leave requests.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        if (user.getRole() != User.Role.admin) {
+            throw new AccessDeniedException("Only admins can approve or reject leave requests.");
+        }
+        return user;
+    }
+
+    public LeaveRequest approveLeaveRequest(Integer leaveId, Integer approverId) {
+        User approver = requireAdmin(approverId);
         LeaveRequest existing = getLeaveRequestById(leaveId);
         existing.setStatus(LeaveRequest.Status.approved);
         existing.setApprovedBy(approver);
         return leaveRequestRepository.save(existing);
     }
 
-    public LeaveRequest rejectLeaveRequest(Integer leaveId, Employee approver) {
+    public LeaveRequest rejectLeaveRequest(Integer leaveId, Integer approverId) {
+        User approver = requireAdmin(approverId);
         LeaveRequest existing = getLeaveRequestById(leaveId);
         existing.setStatus(LeaveRequest.Status.rejected);
         existing.setApprovedBy(approver);
