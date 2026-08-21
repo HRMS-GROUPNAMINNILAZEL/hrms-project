@@ -6,6 +6,32 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+// Attach the JWT (if we have one) to every request so the backend's
+// SecurityConfig can authenticate and authorize it.
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('hrms_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// If a request comes back 401, the token is missing/expired/invalid - force a
+// clean logout instead of leaving the app in a broken, half-authenticated state.
+// The login request itself is excluded so a wrong password just shows an error
+// on the login form instead of triggering this.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    if (error.response?.status === 401 && !isLoginRequest) {
+      localStorage.removeItem('hrms_user');
+      localStorage.removeItem('hrms_token');
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
 
 // --- Auth Endpoints ---
 export const loginUser = async (credentials) => {
