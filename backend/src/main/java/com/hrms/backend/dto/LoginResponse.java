@@ -9,12 +9,14 @@ public class LoginResponse {
     private String username;
     private String email;
     private User.Role role;
+    private String token;
 
-    public LoginResponse(User user) {
+    public LoginResponse(User user, String token) {
         this.userId = user.getUserId();
         this.username = user.getUsername();
         this.email = user.getEmail();
         this.role = user.getRole();
+        this.token = token;
     }
 
     public Integer getUserId() {
@@ -31,5 +33,9 @@ public class LoginResponse {
 
     public User.Role getRole() {
         return role;
+    }
+
+    public String getToken() {
+        return token;
     }
 }

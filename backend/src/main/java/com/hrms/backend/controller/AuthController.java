@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.backend.dto.LoginRequest;
 import com.hrms.backend.dto.LoginResponse;
 import com.hrms.backend.entity.User;
+import com.hrms.backend.security.JwtUtil;
 import com.hrms.backend.services.UserService;
 
 @RestController
@@ -19,12 +20,16 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    // No JWT/session yet - just checks the credentials and returns the user's
-    // info so the frontend can store it (e.g. in React state or localStorage)
-    // and use user.role to decide what to show/hide.
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // Checks the credentials, then issues a signed token. The frontend attaches
+    // it as "Authorization: Bearer <token>" on every request after this; see
+    // SecurityConfig for how the token gets validated and mapped to roles.
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         User user = userService.login(request.getUsername(), request.getPassword());
-        return ResponseEntity.ok(new LoginResponse(user));
+        String token = jwtUtil.generateToken(user);
+        return ResponseEntity.ok(new LoginResponse(user, token));
     }
 }
