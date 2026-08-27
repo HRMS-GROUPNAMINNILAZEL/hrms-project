@@ -189,8 +189,6 @@ export default function EmployeeDashboard() {
     setActionError('');
     setSavingProfile(true);
 
-    // The backend PUT overwrites every field on the employee, so the full
-    // current profile has to be sent back along with the two editable fields.
     const payload = {
       user: { userId: employeeProfile.user.userId },
       firstName: employeeProfile.firstName,
@@ -216,53 +214,68 @@ export default function EmployeeDashboard() {
   };
 
   if (loading) {
-    return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif' }}>Loading your dashboard...</div>;
+    return <div style={{ padding: '40px', textAlign: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f8fafc', color: '#0f172a', minHeight: '100vh' }}>Loading your dashboard...</div>;
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8f9fa', fontFamily: 'sans-serif' }}>
-      {/* Sidebar */}
-      <div style={{ width: '250px', backgroundColor: '#343a40', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#0f172a' }}>
+      {/* Sidebar matching screenshot layout precisely */}
+      <div style={{ width: '260px', backgroundColor: '#182232', color: '#ffffff', padding: '32px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
         <div>
-          <h2 style={{ fontSize: '20px', marginBottom: '10px', textAlign: 'center', color: '#28a745' }}>Employee Portal</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '24px', textAlign: 'center', color: '#ffffff', letterSpacing: '0.5px' }}>Employee Portal</h2>
           {employeeProfile && (
-            <p style={{ fontSize: '13px', textAlign: 'center', color: '#adb5bd', marginBottom: '30px' }}>
-              {employeeProfile.firstName} {employeeProfile.lastName}<br />
-              <span style={{ color: '#17a2b8' }}>{employeeProfile.position}</span>
-            </p>
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                {employeeProfile.position}
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
+                {employeeProfile.firstName} {employeeProfile.lastName}
+              </div>
+            </div>
           )}
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             <li 
               onClick={() => setActiveTab('profile')} 
-              style={{ padding: '10px 15px', cursor: 'pointer', backgroundColor: activeTab === 'profile' ? '#495057' : 'transparent', borderRadius: '4px', marginBottom: '5px' }}
+              style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: activeTab === 'profile' ? '#24324a' : 'transparent', borderRadius: '6px', marginBottom: '8px', fontSize: '14px', color: activeTab === 'profile' ? '#ffffff' : '#94a3b8', fontWeight: activeTab === 'profile' ? '500' : 'normal', transition: 'background-color 0.2s, color 0.2s' }}
+              onMouseEnter={(e) => { if (activeTab !== 'profile') { e.currentTarget.style.backgroundColor = '#1f2d42'; e.currentTarget.style.color = '#ffffff'; }}}
+              onMouseLeave={(e) => { if (activeTab !== 'profile') { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}}
             >
-              🙍 My Profile
+              My Profile
             </li>
             <li 
               onClick={() => setActiveTab('leaves')} 
-              style={{ padding: '10px 15px', cursor: 'pointer', backgroundColor: activeTab === 'leaves' ? '#495057' : 'transparent', borderRadius: '4px', marginBottom: '5px' }}
+              style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: activeTab === 'leaves' ? '#24324a' : 'transparent', borderRadius: '6px', marginBottom: '8px', fontSize: '14px', color: activeTab === 'leaves' ? '#ffffff' : '#94a3b8', fontWeight: activeTab === 'leaves' ? '500' : 'normal', transition: 'background-color 0.2s, color 0.2s' }}
+              onMouseEnter={(e) => { if (activeTab !== 'leaves') { e.currentTarget.style.backgroundColor = '#1f2d42'; e.currentTarget.style.color = '#ffffff'; }}}
+              onMouseLeave={(e) => { if (activeTab !== 'leaves') { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}}
             >
-              📝 My Leave Requests
+              My Leave Requests
             </li>
             <li 
               onClick={() => setActiveTab('attendance')} 
-              style={{ padding: '10px 15px', cursor: 'pointer', backgroundColor: activeTab === 'attendance' ? '#495057' : 'transparent', borderRadius: '4px', marginBottom: '5px' }}
+              style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: activeTab === 'attendance' ? '#24324a' : 'transparent', borderRadius: '6px', marginBottom: '8px', fontSize: '14px', color: activeTab === 'attendance' ? '#ffffff' : '#94a3b8', fontWeight: activeTab === 'attendance' ? '500' : 'normal', transition: 'background-color 0.2s, color 0.2s' }}
+              onMouseEnter={(e) => { if (activeTab !== 'attendance') { e.currentTarget.style.backgroundColor = '#1f2d42'; e.currentTarget.style.color = '#ffffff'; }}}
+              onMouseLeave={(e) => { if (activeTab !== 'attendance') { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}}
             >
-              🕒 My Attendance
+              My Attendance
             </li>
             <li 
               onClick={() => setActiveTab('payroll')} 
-              style={{ padding: '10px 15px', cursor: 'pointer', backgroundColor: activeTab === 'payroll' ? '#495057' : 'transparent', borderRadius: '4px', marginBottom: '5px' }}
+              style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: activeTab === 'payroll' ? '#24324a' : 'transparent', borderRadius: '6px', marginBottom: '8px', fontSize: '14px', color: activeTab === 'payroll' ? '#ffffff' : '#94a3b8', fontWeight: activeTab === 'payroll' ? '500' : 'normal', transition: 'background-color 0.2s, color 0.2s' }}
+              onMouseEnter={(e) => { if (activeTab !== 'payroll') { e.currentTarget.style.backgroundColor = '#1f2d42'; e.currentTarget.style.color = '#ffffff'; }}}
+              onMouseLeave={(e) => { if (activeTab !== 'payroll') { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}}
             >
-              💰 My Payroll History
+              My Payroll History
             </li>
           </ul>
         </div>
-        <div>
-          <p style={{ fontSize: '13px', color: '#adb5bd', marginBottom: '10px' }}>Logged in as: <strong>{user.username}</strong></p>
+        <div style={{ backgroundColor: '#101722', padding: '16px', borderRadius: '8px', border: '1px solid #24324a' }}>
+          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px', textAlign: 'center' }}>Logged in as</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>{user.username}</div>
           <button 
             onClick={logout}
-            style={{ width: '100%', padding: '8px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ width: '100%', padding: '10px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', transition: 'background-color 0.2s' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
           >
             Logout
           </button>
@@ -270,9 +283,9 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, padding: '40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h1>
+      <div style={{ flex: 1, padding: '32px 40px', boxSizing: 'border-box', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>
             {activeTab === 'profile' && 'My Profile'}
             {activeTab === 'leaves' && 'My Leave Requests'}
             {activeTab === 'attendance' && 'My Attendance Logs'}
@@ -282,7 +295,9 @@ export default function EmployeeDashboard() {
             {activeTab === 'leaves' && (
               <button 
                 onClick={() => setShowLeaveModal(true)} 
-                style={{ padding: '8px 16px', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}
+                style={{ padding: '8px 16px', cursor: 'pointer', backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '500', fontSize: '14px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', transition: 'background-color 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1e293b'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0f172a'}
               >
                 + Request Leave
               </button>
@@ -290,18 +305,23 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {error && <div style={{ color: 'red', marginBottom: '20px', backgroundColor: '#f8d7da', padding: '10px', borderRadius: '4px' }}>{error}</div>}
-        {actionError && <div style={{ color: 'red', marginBottom: '20px', backgroundColor: '#f8d7da', padding: '10px', borderRadius: '4px' }}>{actionError}</div>}
+        {error && <div style={{ color: '#b91c1c', marginBottom: '20px', backgroundColor: '#fee2e2', padding: '12px 16px', borderRadius: '6px', fontSize: '14px', border: '1px solid #fecaca' }}>{error}</div>}
+        {actionError && <div style={{ color: '#b91c1c', marginBottom: '20px', backgroundColor: '#fee2e2', padding: '12px 16px', borderRadius: '6px', fontSize: '14px', border: '1px solid #fecaca' }}>{actionError}</div>}
 
         {/* Leave Request Modal */}
         {showLeaveModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-            <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '8px', width: '400px' }}>
-              <h3>Submit Leave Request</h3>
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+            <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', boxSizing: 'border-box' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#0f172a', marginTop: 0, marginBottom: '16px' }}>Submit Leave Request</h3>
               <form onSubmit={handleSubmitLeave}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Leave Type</label>
-                  <select name="leaveType" value={leaveForm.leaveType} onChange={handleLeaveInputChange} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>Leave Type</label>
+                  <select 
+                    name="leaveType" 
+                    value={leaveForm.leaveType} 
+                    onChange={handleLeaveInputChange} 
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', color: '#0f172a', backgroundColor: '#ffffff', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px', paddingRight: '36px', boxSizing: 'border-box' }}
+                  >
                     <option value="vacation">Vacation</option>
                     <option value="sick">Sick</option>
                     <option value="emergency">Emergency</option>
@@ -311,24 +331,39 @@ export default function EmployeeDashboard() {
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Start Date</label>
-                  <input type="date" name="startDate" value={leaveForm.startDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }} />
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>Start Date</label>
+                  <input type="date" name="startDate" value={leaveForm.startDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', color: '#0f172a', backgroundColor: '#ffffff', colorScheme: 'light' }} />
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>End Date</label>
-                  <input type="date" name="endDate" value={leaveForm.endDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }} />
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>End Date</label>
+                  <input type="date" name="endDate" value={leaveForm.endDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', color: '#0f172a', backgroundColor: '#ffffff', colorScheme: 'light' }} />
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Reason</label>
-                  <textarea name="reason" value={leaveForm.reason} onChange={handleLeaveInputChange} rows="3" placeholder="Brief explanation..." style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }} />
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>Reason</label>
+                  <textarea name="reason" value={leaveForm.reason} onChange={handleLeaveInputChange} rows="3" placeholder="Brief explanation..." style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', color: '#0f172a', backgroundColor: '#ffffff', resize: 'vertical' }} />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                  <button type="button" onClick={() => setShowLeaveModal(false)} style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                  <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Submit</button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowLeaveModal(false)} 
+                    style={{ padding: '8px 16px', backgroundColor: '#ffffff', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    style={{ padding: '8px 16px', backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1e293b'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0f172a'}
+                  >
+                    Submit
+                  </button>
                 </div>
               </form>
             </div>
@@ -337,33 +372,45 @@ export default function EmployeeDashboard() {
 
         {/* Tab Views */}
         {activeTab === 'profile' && employeeProfile && (
-          <div style={{ backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '4px', padding: '24px', maxWidth: '600px' }}>
+          <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)', borderRadius: '8px', padding: '24px', maxWidth: '600px', border: '1px solid #e2e8f0' }}>
             {!editingProfile ? (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', rowGap: '14px' }}>
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Full Name</div>
-                  <div>{employeeProfile.firstName} {employeeProfile.lastName}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', rowGap: '16px', fontSize: '14px' }}>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Full Name</div>
+                  <div style={{ color: '#0f172a', fontWeight: '500' }}>{employeeProfile.firstName} {employeeProfile.lastName}</div>
 
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Position</div>
-                  <div>{employeeProfile.position || 'N/A'}</div>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Position</div>
+                  <div style={{ color: '#0f172a' }}>{employeeProfile.position || 'N/A'}</div>
 
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Department</div>
-                  <div>{employeeProfile.department?.departmentName || 'None'}</div>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Department</div>
+                  <div style={{ color: '#0f172a' }}>{employeeProfile.department?.departmentName || 'None'}</div>
 
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Hire Date</div>
-                  <div>{employeeProfile.hireDate}</div>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Hire Date</div>
+                  <div style={{ color: '#0f172a' }}>{employeeProfile.hireDate}</div>
 
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Status</div>
-                  <div style={{ textTransform: 'capitalize' }}>{employeeProfile.status}</div>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Status</div>
+                  <div>
+                    <span style={{ 
+                      padding: '2px 8px', 
+                      borderRadius: '4px', 
+                      fontSize: '12px', 
+                      fontWeight: '500', 
+                      backgroundColor: employeeProfile.status === 'active' ? '#dcfce7' : '#f1f5f9', 
+                      color: employeeProfile.status === 'active' ? '#166534' : '#475569',
+                      textTransform: 'capitalize' 
+                    }}>
+                      {employeeProfile.status}
+                    </span>
+                  </div>
 
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Contact Number</div>
-                  <div>{employeeProfile.contactNumber || 'N/A'}</div>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Contact Number</div>
+                  <div style={{ color: '#0f172a' }}>{employeeProfile.contactNumber || 'N/A'}</div>
 
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Address</div>
-                  <div>{employeeProfile.address || 'N/A'}</div>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Address</div>
+                  <div style={{ color: '#0f172a' }}>{employeeProfile.address || 'N/A'}</div>
 
-                  <div style={{ color: '#6c757d', fontSize: '13px' }}>Email</div>
-                  <div>{employeeProfile.user?.email}</div>
+                  <div style={{ color: '#64748b', fontWeight: '500' }}>Email</div>
+                  <div style={{ color: '#0f172a' }}>{employeeProfile.user?.email}</div>
                 </div>
                 <button
                   onClick={() => {
@@ -373,27 +420,46 @@ export default function EmployeeDashboard() {
                     });
                     setEditingProfile(true);
                   }}
-                  style={{ marginTop: '20px', padding: '8px 16px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  style={{ marginTop: '24px', padding: '8px 16px', backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background-color 0.2s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1e293b'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0f172a'}
                 >
                   Edit Contact Info
                 </button>
               </>
             ) : (
               <form onSubmit={handleSaveProfile}>
-                <p style={{ fontSize: '12px', color: '#6c757d', marginTop: 0 }}>
+                <p style={{ fontSize: '13px', color: '#64748b', marginTop: 0, marginBottom: '20px' }}>
                   Only your contact number and address can be edited here. Other details are managed by HR.
                 </p>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Contact Number</label>
-                  <input type="text" name="contactNumber" value={profileForm.contactNumber} onChange={handleProfileInputChange} placeholder="09171234567" style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }} />
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>Contact Number</label>
+                  <input type="text" name="contactNumber" value={profileForm.contactNumber} onChange={handleProfileInputChange} placeholder="09171234567" style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', color: '#0f172a', backgroundColor: '#ffffff' }} />
                 </div>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Address</label>
-                  <input type="text" name="address" value={profileForm.address} onChange={handleProfileInputChange} placeholder="City, Province" style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }} />
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>Address</label>
+                  <input type="text" name="address" value={profileForm.address} onChange={handleProfileInputChange} placeholder="City, Province" style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', color: '#0f172a', backgroundColor: '#ffffff' }} />
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" disabled={savingProfile} onClick={() => setEditingProfile(false)} style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: savingProfile ? 'not-allowed' : 'pointer' }}>Cancel</button>
-                  <button type="submit" disabled={savingProfile} style={{ padding: '8px 16px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: savingProfile ? 'not-allowed' : 'pointer' }}>{savingProfile ? 'Saving...' : 'Save Changes'}</button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    type="button" 
+                    disabled={savingProfile} 
+                    onClick={() => setEditingProfile(false)} 
+                    style={{ padding: '8px 16px', backgroundColor: '#ffffff', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: savingProfile ? 'not-allowed' : 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => { if (!savingProfile) e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                    onMouseLeave={(e) => { if (!savingProfile) e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={savingProfile} 
+                    style={{ padding: '8px 16px', backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '6px', cursor: savingProfile ? 'not-allowed' : 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => { if (!savingProfile) e.currentTarget.style.backgroundColor = '#1e293b'; }}
+                    onMouseLeave={(e) => { if (!savingProfile) e.currentTarget.style.backgroundColor = '#0f172a'; }}
+                  >
+                    {savingProfile ? 'Saving...' : 'Save Changes'}
+                  </button>
                 </div>
               </form>
             )}
@@ -401,149 +467,182 @@ export default function EmployeeDashboard() {
         )}
 
         {activeTab === 'leaves' && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#e9ecef', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
-                <th style={{ padding: '12px' }}>Type</th>
-                <th style={{ padding: '12px' }}>Start Date</th>
-                <th style={{ padding: '12px' }}>End Date</th>
-                <th style={{ padding: '12px' }}>Reason</th>
-                <th style={{ padding: '12px' }}>Status</th>
-                <th style={{ padding: '12px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaveRequests.length === 0 ? (
-                <tr><td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>No leave requests found.</td></tr>
-              ) : (
-                leaveRequests.map((req) => (
-                  <tr key={req.leaveId} style={{ borderBottom: '1px solid #dee2e6' }}>
-                    <td style={{ padding: '12px', textTransform: 'capitalize' }}>{req.leaveType}</td>
-                    <td style={{ padding: '12px' }}>{req.startDate}</td>
-                    <td style={{ padding: '12px' }}>{req.endDate}</td>
-                    <td style={{ padding: '12px' }}>{req.reason || 'N/A'}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{ 
-                        padding: '4px 8px', 
-                        borderRadius: '4px', 
-                        fontSize: '12px', 
-                        backgroundColor: req.status === 'approved' ? '#d4edda' : req.status === 'rejected' ? '#f8d7da' : '#fff3cd', 
-                        color: req.status === 'approved' ? '#155724' : req.status === 'rejected' ? '#721c24' : '#856404' 
-                      }}>
-                        {req.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      {req.status === 'pending' ? (
-                        <button
-                          onClick={() => handleCancelLeave(req.leaveId)}
-                          style={{ padding: '4px 8px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                        >
-                          Cancel
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '12px', color: '#6c757d' }}>—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        )}
-
-        {activeTab === 'attendance' && (
-          <div>
-            {/* Today's clock in/out card */}
-            <div style={{ backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '4px', padding: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '4px' }}>Today &middot; {todayStr()}</div>
-                {todaysAttendance ? (
-                  <div style={{ fontSize: '14px' }}>
-                    Clocked in at <strong>{todaysAttendance.timeIn}</strong>
-                    {todaysAttendance.timeOut ? (
-                      <> &middot; Clocked out at <strong>{todaysAttendance.timeOut}</strong></>
-                    ) : (
-                      <span style={{ color: '#856404' }}> &middot; Still clocked in</span>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '14px', color: '#6c757d' }}>You haven't clocked in yet today.</div>
-                )}
-              </div>
-              <div>
-                {!todaysAttendance && (
-                  <button onClick={handleClockIn} disabled={clockLoading} style={{ padding: '8px 16px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: clockLoading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
-                    {clockLoading ? 'Please wait...' : 'Clock In'}
-                  </button>
-                )}
-                {todaysAttendance && !todaysAttendance.timeOut && (
-                  <button onClick={handleClockOut} disabled={clockLoading} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: clockLoading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
-                    {clockLoading ? 'Please wait...' : 'Clock Out'}
-                  </button>
-                )}
-                {todaysAttendance && todaysAttendance.timeOut && (
-                  <span style={{ fontSize: '13px', color: '#28a745', fontWeight: 'bold' }}>✓ Done for today</span>
-                )}
-              </div>
-            </div>
-
-            <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#e9ecef', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
-                  <th style={{ padding: '12px' }}>Date</th>
-                  <th style={{ padding: '12px' }}>Time In</th>
-                  <th style={{ padding: '12px' }}>Time Out</th>
-                  <th style={{ padding: '12px' }}>Status</th>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: '600', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <th style={{ padding: '16px' }}>Type</th>
+                  <th style={{ padding: '16px' }}>Start Date</th>
+                  <th style={{ padding: '16px' }}>End Date</th>
+                  <th style={{ padding: '16px' }}>Reason</th>
+                  <th style={{ padding: '16px' }}>Status</th>
+                  <th style={{ padding: '16px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {attendance.length === 0 ? (
-                  <tr><td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>No attendance records found.</td></tr>
+                {leaveRequests.length === 0 ? (
+                  <tr><td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>No leave requests found.</td></tr>
                 ) : (
-                  [...attendance]
-                    .sort((a, b) => (a.date < b.date ? 1 : -1))
-                    .map((att) => (
-                      <tr key={att.attendanceId} style={{ borderBottom: '1px solid #dee2e6' }}>
-                        <td style={{ padding: '12px' }}>{att.date}</td>
-                        <td style={{ padding: '12px' }}>{att.timeIn || 'N/A'}</td>
-                        <td style={{ padding: '12px' }}>{att.timeOut || 'N/A'}</td>
-                        <td style={{ padding: '12px', textTransform: 'capitalize' }}>{att.status}</td>
-                      </tr>
-                    ))
+                  leaveRequests.map((req) => (
+                    <tr key={req.leaveId} style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>
+                      <td style={{ padding: '16px', textTransform: 'capitalize', fontWeight: '500' }}>{req.leaveType}</td>
+                      <td style={{ padding: '16px', color: '#334155' }}>{req.startDate}</td>
+                      <td style={{ padding: '16px', color: '#334155' }}>{req.endDate}</td>
+                      <td style={{ padding: '16px', color: '#64748b' }}>{req.reason || 'N/A'}</td>
+                      <td style={{ padding: '16px' }}>
+                        <span style={{ 
+                          padding: '4px 8px', 
+                          borderRadius: '4px', 
+                          fontSize: '12px', 
+                          fontWeight: '500',
+                          backgroundColor: req.status === 'approved' ? '#dcfce7' : req.status === 'rejected' ? '#fee2e2' : '#fef9c3', 
+                          color: req.status === 'approved' ? '#166534' : req.status === 'rejected' ? '#991b1b' : '#854d0e',
+                          textTransform: 'capitalize'
+                        }}>
+                          {req.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        {req.status === 'pending' ? (
+                          <button
+                            onClick={() => handleCancelLeave(req.leaveId)}
+                            style={{ padding: '4px 10px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500', transition: 'background-color 0.2s' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                          >
+                            Cancel
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '12px', color: '#94a3b8' }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
         )}
 
-        {activeTab === 'payroll' && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#e9ecef', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
-                <th style={{ padding: '12px' }}>Pay Period</th>
-                <th style={{ padding: '12px' }}>Basic Salary</th>
-                <th style={{ padding: '12px' }}>Deductions</th>
-                <th style={{ padding: '12px' }}>Bonuses</th>
-                <th style={{ padding: '12px' }}>Net Pay</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payroll.length === 0 ? (
-                <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>No payroll history found.</td></tr>
-              ) : (
-                payroll.map((pay) => (
-                  <tr key={pay.payrollId} style={{ borderBottom: '1px solid #dee2e6' }}>
-                    <td style={{ padding: '12px' }}>{pay.payPeriodStart} to {pay.payPeriodEnd}</td>
-                    <td style={{ padding: '12px' }}>₱{pay.basicSalary?.toFixed(2)}</td>
-                    <td style={{ padding: '12px' }}>₱{pay.deductions?.toFixed(2)}</td>
-                    <td style={{ padding: '12px' }}>₱{pay.bonuses?.toFixed(2)}</td>
-                    <td style={{ padding: '12px' }}><strong>₱{pay.netPay?.toFixed(2)}</strong></td>
+        {activeTab === 'attendance' && (
+          <div>
+            {/* Today's clock in/out card */}
+            <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)', borderRadius: '8px', padding: '20px 24px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0' }}>
+              <div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.05em' }}>Today &middot; {todayStr()}</div>
+                {todaysAttendance ? (
+                  <div style={{ fontSize: '14px', color: '#0f172a' }}>
+                    Clocked in at <strong style={{ fontWeight: '600' }}>{todaysAttendance.timeIn}</strong>
+                    {todaysAttendance.timeOut ? (
+                      <> &middot; Clocked out at <strong style={{ fontWeight: '600' }}>{todaysAttendance.timeOut}</strong></>
+                    ) : (
+                      <span style={{ color: '#d97706', fontWeight: '500' }}> &middot; Still clocked in</span>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '14px', color: '#64748b' }}>You haven't clocked in yet today.</div>
+                )}
+              </div>
+              <div>
+                {!todaysAttendance && (
+                  <button 
+                    onClick={handleClockIn} 
+                    disabled={clockLoading} 
+                    style={{ padding: '8px 16px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', cursor: clockLoading ? 'not-allowed' : 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => { if (!clockLoading) e.currentTarget.style.backgroundColor = '#15803d'; }}
+                    onMouseLeave={(e) => { if (!clockLoading) e.currentTarget.style.backgroundColor = '#16a34a'; }}
+                  >
+                    {clockLoading ? 'Please wait...' : 'Clock In'}
+                  </button>
+                )}
+                {todaysAttendance && !todaysAttendance.timeOut && (
+                  <button 
+                    onClick={handleClockOut} 
+                    disabled={clockLoading} 
+                    style={{ padding: '8px 16px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: clockLoading ? 'not-allowed' : 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => { if (!clockLoading) e.currentTarget.style.backgroundColor = '#b91c1c'; }}
+                    onMouseLeave={(e) => { if (!clockLoading) e.currentTarget.style.backgroundColor = '#dc2626'; }}
+                  >
+                    {clockLoading ? 'Please wait...' : 'Clock Out'}
+                  </button>
+                )}
+                {todaysAttendance && todaysAttendance.timeOut && (
+                  <span style={{ fontSize: '14px', color: '#16a34a', fontWeight: '600' }}>✓ Done for today</span>
+                )}
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: '600', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '16px' }}>Date</th>
+                    <th style={{ padding: '16px' }}>Time In</th>
+                    <th style={{ padding: '16px' }}>Time Out</th>
+                    <th style={{ padding: '16px' }}>Status</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {attendance.length === 0 ? (
+                    <tr><td colSpan="4" style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>No attendance records found.</td></tr>
+                  ) : (
+                    [...attendance]
+                      .sort((a, b) => (a.date < b.date ? 1 : -1))
+                      .map((att) => (
+                        <tr key={att.attendanceId} style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>
+                          <td style={{ padding: '16px', fontWeight: '500' }}>{att.date}</td>
+                          <td style={{ padding: '16px', color: '#334155' }}>{att.timeIn || 'N/A'}</td>
+                          <td style={{ padding: '16px', color: '#334155' }}>{att.timeOut || 'N/A'}</td>
+                          <td style={{ padding: '16px', textTransform: 'capitalize' }}>
+                            <span style={{ 
+                              padding: '2px 8px', 
+                              borderRadius: '4px', 
+                              fontSize: '12px', 
+                              fontWeight: '500', 
+                              backgroundColor: att.status === 'present' ? '#dcfce7' : '#f1f5f9', 
+                              color: att.status === 'present' ? '#166534' : '#475569' 
+                            }}>
+                              {att.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'payroll' && (
+          <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: '600', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <th style={{ padding: '16px' }}>Pay Period</th>
+                  <th style={{ padding: '16px' }}>Basic Salary</th>
+                  <th style={{ padding: '16px' }}>Deductions</th>
+                  <th style={{ padding: '16px' }}>Bonuses</th>
+                  <th style={{ padding: '16px' }}>Net Pay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payroll.length === 0 ? (
+                  <tr><td colSpan="5" style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>No payroll history found.</td></tr>
+                ) : (
+                  payroll.map((pay) => (
+                    <tr key={pay.payrollId} style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>
+                      <td style={{ padding: '16px', fontWeight: '500' }}>{pay.payPeriodStart} to {pay.payPeriodEnd}</td>
+                      <td style={{ padding: '16px', color: '#334155' }}>₱{pay.basicSalary?.toFixed(2)}</td>
+                      <td style={{ padding: '16px', color: '#334155' }}>₱{pay.deductions?.toFixed(2)}</td>
+                      <td style={{ padding: '16px', color: '#334155' }}>₱{pay.bonuses?.toFixed(2)}</td>
+                      <td style={{ padding: '16px', color: '#0f172a' }}><strong style={{ fontWeight: '600' }}>₱{pay.netPay?.toFixed(2)}</strong></td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
