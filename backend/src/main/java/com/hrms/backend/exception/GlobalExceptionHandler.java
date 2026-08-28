@@ -48,6 +48,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
     }
 
+    // Business-rule violations (e.g. requesting more leave than the employee
+    // has remaining) - surfaced as a 400 with the specific reason.
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalState(IllegalStateException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Bad Request");
+        body.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
     // Catches DB constraint violations (duplicate unique keys, missing required
     // foreign keys, etc.) and returns a 409 with a readable message instead of
     // letting them fall through to a generic 500. Example: trying to link an

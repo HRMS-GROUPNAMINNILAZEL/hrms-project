@@ -78,4 +78,47 @@ export const createPayroll = (data) => api.post('/payroll', data).then(res => re
 export const updatePayroll = (id, data) => api.put(`/payroll/${id}`, data).then(res => res.data);
 export const deletePayroll = (id) => api.delete(`/payroll/${id}`).then(res => res.data);
 
+// --- Password Reset Endpoints ---
+export const forgotPassword = (usernameOrEmail) => api.post('/auth/forgot-password', { usernameOrEmail }).then(res => res.data);
+export const resetPassword = (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }).then(res => res.data);
+
+// --- Leave Balance Endpoints ---
+export const getLeaveBalances = (params) => api.get('/leave-balances', { params }).then(res => res.data);
+export const createLeaveBalance = (data) => api.post('/leave-balances', data).then(res => res.data);
+export const updateLeaveBalance = (id, data) => api.put(`/leave-balances/${id}`, data).then(res => res.data);
+export const deleteLeaveBalance = (id) => api.delete(`/leave-balances/${id}`).then(res => res.data);
+
+// --- Performance Review Endpoints ---
+export const getPerformanceReviews = (params) => api.get('/performance-reviews', { params }).then(res => res.data);
+export const createPerformanceReview = (data) => api.post('/performance-reviews', data).then(res => res.data);
+export const updatePerformanceReview = (id, data) => api.put(`/performance-reviews/${id}`, data).then(res => res.data);
+export const deletePerformanceReview = (id) => api.delete(`/performance-reviews/${id}`).then(res => res.data);
+
+// --- Skills Endpoints ---
+export const getSkills = () => api.get('/skills').then(res => res.data);
+export const createSkill = (data) => api.post('/skills', data).then(res => res.data);
+export const updateSkill = (id, data) => api.put(`/skills/${id}`, data).then(res => res.data);
+export const deleteSkill = (id) => api.delete(`/skills/${id}`).then(res => res.data);
+
+// --- Employee Skill Endpoints ---
+export const getEmployeeSkills = (params) => api.get('/employee-skills', { params }).then(res => res.data);
+export const getSkillGapAnalysis = (employeeId) => api.get(`/employee-skills/gap-analysis/${employeeId}`).then(res => res.data);
+export const createEmployeeSkill = (data) => api.post('/employee-skills', data).then(res => res.data);
+export const updateEmployeeSkill = (id, data) => api.put(`/employee-skills/${id}`, data).then(res => res.data);
+export const deleteEmployeeSkill = (id) => api.delete(`/employee-skills/${id}`).then(res => res.data);
+
+// --- Role Required Skill Endpoints ---
+export const getRoleRequiredSkills = () => api.get('/role-required-skills').then(res => res.data);
+export const createRoleRequiredSkill = (data) => api.post('/role-required-skills', data).then(res => res.data);
+export const updateRoleRequiredSkill = (id, data) => api.put(`/role-required-skills/${id}`, data).then(res => res.data);
+export const deleteRoleRequiredSkill = (id) => api.delete(`/role-required-skills/${id}`).then(res => res.data);
+
+// --- Attrition Risk Endpoints ---
+export const getAttritionIndicators = (params) => api.get('/attrition', { params }).then(res => res.data);
+export const computeAttritionForAll = () => api.post('/attrition/compute').then(res => res.data);
+export const computeAttritionForEmployee = (employeeId) => api.post(`/attrition/compute/${employeeId}`).then(res => res.data);
+
+// --- Analytics Endpoints ---
+export const getAnalyticsSummary = () => api.get('/analytics/summary').then(res => res.data);
+
 export default api;

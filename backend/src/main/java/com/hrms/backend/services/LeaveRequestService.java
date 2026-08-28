@@ -21,6 +21,9 @@ public class LeaveRequestService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private LeaveBalanceService leaveBalanceService;
+
     public List<LeaveRequest> getAllLeaveRequests() {
         return leaveRequestRepository.findAll();
     }
@@ -39,6 +42,15 @@ public class LeaveRequestService {
     }
 
     public LeaveRequest createLeaveRequest(LeaveRequest leaveRequest) {
+        // Fail fast if the employee doesn't have enough remaining balance for this
+        // leave type/year, rather than letting them file a request that can never
+        // legitimately be approved.
+        leaveBalanceService.assertSufficientBalance(
+                leaveRequest.getEmployee().getEmployeeId(),
+                leaveRequest.getLeaveType(),
+                leaveRequest.getStartDate(),
+                leaveRequest.getEndDate());
+
         leaveRequest.setStatus(LeaveRequest.Status.pending);
         return leaveRequestRepository.save(leaveRequest);
     }
@@ -73,6 +85,17 @@ public class LeaveRequestService {
     public LeaveRequest approveLeaveRequest(Integer leaveId, Integer approverId) {
         User approver = requireAdmin(approverId);
         LeaveRequest existing = getLeaveRequestById(leaveId);
+
+        // Re-check the balance at approval time too, since it may have shifted
+        // (e.g. another leave request for the same employee/type was approved
+        // in between the employee filing this one and it reaching an approver).
+        if (existing.getStatus() != LeaveRequest.Status.approved) {
+            leaveBalanceService.assertSufficientBalance(
+                    existing.getEmployee().getEmployeeId(), existing.getLeaveType(), existing.getStartDate(), existing.getEndDate());
+            leaveBalanceService.deductForApproval(
+                    existing.getEmployee().getEmployeeId(), existing.getLeaveType(), existing.getStartDate(), existing.getEndDate());
+        }
+
         existing.setStatus(LeaveRequest.Status.approved);
         existing.setApprovedBy(approver);
         return leaveRequestRepository.save(existing);
@@ -81,6 +104,14 @@ public class LeaveRequestService {
     public LeaveRequest rejectLeaveRequest(Integer leaveId, Integer approverId) {
         User approver = requireAdmin(approverId);
         LeaveRequest existing = getLeaveRequestById(leaveId);
+
+        // If it had already been approved (and is now being reversed), give the
+        // days back to the employee's balance.
+        if (existing.getStatus() == LeaveRequest.Status.approved) {
+            leaveBalanceService.restoreFromApproval(
+                    existing.getEmployee().getEmployeeId(), existing.getLeaveType(), existing.getStartDate(), existing.getEndDate());
+        }
+
         existing.setStatus(LeaveRequest.Status.rejected);
         existing.setApprovedBy(approver);
         return leaveRequestRepository.save(existing);
@@ -88,6 +119,14 @@ public class LeaveRequestService {
 
     public void deleteLeaveRequest(Integer leaveId) {
         LeaveRequest existing = getLeaveRequestById(leaveId);
+
+        // Deleting an already-approved request (e.g. HR cleaning up a mistaken
+        // entry) should hand the days back rather than leaving them consumed.
+        if (existing.getStatus() == LeaveRequest.Status.approved) {
+            leaveBalanceService.restoreFromApproval(
+                    existing.getEmployee().getEmployeeId(), existing.getLeaveType(), existing.getStartDate(), existing.getEndDate());
+        }
+
         leaveRequestRepository.delete(existing);
     }
 }

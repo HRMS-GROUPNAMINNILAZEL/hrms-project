@@ -50,20 +50,75 @@
   }
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
 body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+}
+
+/* --- Responsive dashboard shell ---
+   Used by AdminDashboard / EmployeeDashboard so the app fills the full
+   browser window edge-to-edge and gracefully collapses on small screens. */
+.dashboard-shell {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.dashboard-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.dashboard-main {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 32px 40px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-shell {
+    flex-direction: column;
+  }
+
+  .dashboard-sidebar {
+    width: 100%;
+  }
+
+  .dashboard-main {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-main {
+    padding: 16px;
+  }
 }
 
 h1,

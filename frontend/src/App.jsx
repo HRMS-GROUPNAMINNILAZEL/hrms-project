@@ -1,6 +1,6 @@
 import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext'; // 1. Import ThemeProvider
+import { ThemeProvider } from './context/ThemeContext';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
@@ -23,7 +23,7 @@ function MainRouter() {
 
 export default function App() {
   return (
-    <ThemeProvider> {/* 2. Wrap ThemeProvider outside AuthProvider */}
+    <ThemeProvider>
       <AuthProvider>
         <MainRouter />
       </AuthProvider>

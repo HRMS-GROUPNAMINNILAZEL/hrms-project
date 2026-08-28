@@ -55,8 +55,11 @@ public class SecurityConfig {
                 // request whenever it includes an Authorization header - always allow it.
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Logging in is the one endpoint that doesn't require a token yet.
+                // Logging in (and the forgot/reset password handshake) don't require a
+                // token yet - that's the whole point of them.
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
 
                 // System user accounts (login credentials) - admin only.
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
@@ -97,6 +100,42 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers(HttpMethod.PUT, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers(HttpMethod.DELETE, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
+
+                // Leave balances - any signed-in user can view (own balance on their
+                // dashboard); only admin/hr can create/adjust/delete allotments.
+                .requestMatchers(HttpMethod.GET, "/api/leave-balances/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/leave-balances/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.PUT, "/api/leave-balances/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.DELETE, "/api/leave-balances/**").hasAnyRole("ADMIN", "HR")
+
+                // Performance reviews - any signed-in user can view (employees see their
+                // own); only admin/hr/manager can write reviews as a reviewer.
+                .requestMatchers(HttpMethod.GET, "/api/performance-reviews/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/performance-reviews/**").hasAnyRole("ADMIN", "HR", "MANAGER")
+                .requestMatchers(HttpMethod.PUT, "/api/performance-reviews/**").hasAnyRole("ADMIN", "HR", "MANAGER")
+                .requestMatchers(HttpMethod.DELETE, "/api/performance-reviews/**").hasAnyRole("ADMIN", "HR")
+
+                // Skills catalog, employee-skill records, and role requirements - anyone
+                // can read (dropdowns, skill-gap views); only admin/hr maintain them.
+                .requestMatchers(HttpMethod.GET, "/api/skills/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/skills/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.PUT, "/api/skills/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.DELETE, "/api/skills/**").hasAnyRole("ADMIN", "HR")
+
+                .requestMatchers(HttpMethod.GET, "/api/employee-skills/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/employee-skills/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.PUT, "/api/employee-skills/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.DELETE, "/api/employee-skills/**").hasAnyRole("ADMIN", "HR")
+
+                .requestMatchers(HttpMethod.GET, "/api/role-required-skills/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/role-required-skills/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.PUT, "/api/role-required-skills/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.DELETE, "/api/role-required-skills/**").hasAnyRole("ADMIN", "HR")
+
+                // Attrition risk data and the org-wide analytics summary surface sensitive,
+                // aggregated HR judgments about employees - admin/hr only.
+                .requestMatchers("/api/attrition/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers("/api/analytics/**").hasAnyRole("ADMIN", "HR")
 
                 // Anything not covered above still needs a valid token.
                 .anyRequest().authenticated()
