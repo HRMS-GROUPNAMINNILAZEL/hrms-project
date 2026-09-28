@@ -24,6 +24,9 @@ public class LeaveRequestService {
     @Autowired
     private LeaveBalanceService leaveBalanceService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public List<LeaveRequest> getAllLeaveRequests() {
         return leaveRequestRepository.findAll();
     }
@@ -67,23 +70,26 @@ public class LeaveRequestService {
         return leaveRequestRepository.save(existing);
     }
 
-    // Looks up the user making the request and confirms they're an admin.
-    // Throws if the user doesn't exist or isn't an admin - callers should not
+    // Looks up the user making the request and confirms they have an
+    // approver-level role (admin, hr, or manager) matching the route-level
+    // rules in SecurityConfig. Throws if they don't — callers should not
     // catch this, it's meant to propagate up to the GlobalExceptionHandler.
-    private User requireAdmin(Integer userId) {
+    private User requireApprover(Integer userId) {
         if (userId == null) {
-            throw new AccessDeniedException("Only admins can approve or reject leave requests.");
+            throw new AccessDeniedException("Only admins, HR, or managers can approve or reject leave requests.");
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        if (user.getRole() != User.Role.admin) {
-            throw new AccessDeniedException("Only admins can approve or reject leave requests.");
+        if (user.getRole() != User.Role.admin
+                && user.getRole() != User.Role.hr
+                && user.getRole() != User.Role.manager) {
+            throw new AccessDeniedException("Only admins, HR, or managers can approve or reject leave requests.");
         }
         return user;
     }
 
     public LeaveRequest approveLeaveRequest(Integer leaveId, Integer approverId) {
-        User approver = requireAdmin(approverId);
+        User approver = requireApprover(approverId);
         LeaveRequest existing = getLeaveRequestById(leaveId);
 
         // Re-check the balance at approval time too, since it may have shifted
@@ -98,11 +104,20 @@ public class LeaveRequestService {
 
         existing.setStatus(LeaveRequest.Status.approved);
         existing.setApprovedBy(approver);
-        return leaveRequestRepository.save(existing);
+        LeaveRequest saved = leaveRequestRepository.save(existing);
+
+        // Notify the employee
+        if (existing.getEmployee().getUser() != null) {
+            notificationService.create(
+                existing.getEmployee().getUser().getUserId(),
+                "Your " + existing.getLeaveType() + " leave request (" + existing.getStartDate() + " to " + existing.getEndDate() + ") has been approved.",
+                "leave_approved");
+        }
+        return saved;
     }
 
     public LeaveRequest rejectLeaveRequest(Integer leaveId, Integer approverId) {
-        User approver = requireAdmin(approverId);
+        User approver = requireApprover(approverId);
         LeaveRequest existing = getLeaveRequestById(leaveId);
 
         // If it had already been approved (and is now being reversed), give the
@@ -114,7 +129,16 @@ public class LeaveRequestService {
 
         existing.setStatus(LeaveRequest.Status.rejected);
         existing.setApprovedBy(approver);
-        return leaveRequestRepository.save(existing);
+        LeaveRequest saved = leaveRequestRepository.save(existing);
+
+        // Notify the employee
+        if (existing.getEmployee().getUser() != null) {
+            notificationService.create(
+                existing.getEmployee().getUser().getUserId(),
+                "Your " + existing.getLeaveType() + " leave request (" + existing.getStartDate() + " to " + existing.getEndDate() + ") has been rejected.",
+                "leave_rejected");
+        }
+        return saved;
     }
 
     public void deleteLeaveRequest(Integer leaveId) {

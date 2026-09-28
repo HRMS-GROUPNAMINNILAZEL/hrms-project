@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.backend.entity.Attendance;
 import com.hrms.backend.services.AttendanceService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/attendance")
 public class AttendanceController {
@@ -52,14 +54,14 @@ public class AttendanceController {
     }
 
     @PostMapping
-    public ResponseEntity<Attendance> createAttendance(@RequestBody Attendance attendance) {
+    public ResponseEntity<Attendance> createAttendance(@Valid @RequestBody Attendance attendance) {
         Attendance saved = attendanceService.createAttendance(attendance);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Attendance> updateAttendance(@PathVariable("id") Integer attendanceId,
-                                                          @RequestBody Attendance attendance) {
+                                                          @Valid @RequestBody Attendance attendance) {
         Attendance updated = attendanceService.updateAttendance(attendanceId, attendance);
         return ResponseEntity.ok(updated);
     }

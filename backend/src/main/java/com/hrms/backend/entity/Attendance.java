@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "attendance")
@@ -25,8 +26,10 @@ public class Attendance {
 
     @ManyToOne
     @JoinColumn(name = "employee_id", nullable = false)
+    @NotNull(message = "Employee is required")
     private Employee employee;
 
+    @NotNull(message = "Date is required")
     @Column(name = "date", nullable = false)
     private LocalDate date;
 

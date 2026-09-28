@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "leave_requests")
@@ -25,16 +26,20 @@ public class LeaveRequest {
 
     @ManyToOne
     @JoinColumn(name = "employee_id", nullable = false)
+    @NotNull(message = "Employee is required")
     private Employee employee;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "leave_type", nullable = false)
+    @NotNull(message = "Leave type is required")
     private LeaveType leaveType;
 
     @Column(name = "start_date", nullable = false)
+    @NotNull(message = "Start date is required")
     private LocalDate startDate;
 
     @Column(name = "end_date", nullable = false)
+    @NotNull(message = "End date is required")
     private LocalDate endDate;
 
     @Column(length = 255)

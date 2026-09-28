@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.backend.entity.Department;
 import com.hrms.backend.services.DepartmentService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/departments")
 public class DepartmentController {
@@ -35,14 +37,14 @@ public class DepartmentController {
     }
 
     @PostMapping
-    public ResponseEntity<Department> createDepartment(@RequestBody Department department) {
+    public ResponseEntity<Department> createDepartment(@Valid @RequestBody Department department) {
         Department saved = departmentService.createDepartment(department);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Department> updateDepartment(@PathVariable("id") Integer departmentId,
-                                                          @RequestBody Department department) {
+                                                          @Valid @RequestBody Department department) {
         Department updated = departmentService.updateDepartment(departmentId, department);
         return ResponseEntity.ok(updated);
     }

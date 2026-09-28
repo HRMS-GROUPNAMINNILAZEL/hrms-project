@@ -1,7 +1,5 @@
 package com.hrms.backend.services;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -14,11 +12,9 @@ import com.hrms.backend.dto.AnalyticsSummary;
 import com.hrms.backend.entity.AttritionIndicator;
 import com.hrms.backend.entity.Employee;
 import com.hrms.backend.entity.LeaveRequest;
-import com.hrms.backend.entity.Payroll;
 import com.hrms.backend.repository.AttritionIndicatorRepository;
 import com.hrms.backend.repository.EmployeeRepository;
 import com.hrms.backend.repository.LeaveRequestRepository;
-import com.hrms.backend.repository.PayrollRepository;
 
 @Service
 public class AnalyticsService {
@@ -30,15 +26,11 @@ public class AnalyticsService {
     private LeaveRequestRepository leaveRequestRepository;
 
     @Autowired
-    private PayrollRepository payrollRepository;
-
-    @Autowired
     private AttritionIndicatorRepository attritionIndicatorRepository;
 
     public AnalyticsSummary getSummary() {
         List<Employee> employees = employeeRepository.findAll();
         List<LeaveRequest> leaveRequests = leaveRequestRepository.findAll();
-        List<Payroll> payrolls = payrollRepository.findAll();
 
         AnalyticsSummary summary = new AnalyticsSummary();
 
@@ -52,20 +44,6 @@ public class AnalyticsService {
 
         summary.setEmployeesByStatus(employees.stream()
                 .collect(Collectors.groupingBy(e -> e.getStatus().name(), Collectors.counting())));
-
-        // "Last period" = the most recent pay_period_end across all payroll runs,
-        // summed across every employee paid for that same period.
-        payrolls.stream()
-                .max(Comparator.comparing(Payroll::getPayPeriodEnd))
-                .map(Payroll::getPayPeriodEnd)
-                .ifPresentOrElse(latestEnd -> {
-                    BigDecimal total = payrolls.stream()
-                            .filter(p -> latestEnd.equals(p.getPayPeriodEnd()))
-                            .map(Payroll::getNetPay)
-                            .filter(java.util.Objects::nonNull)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    summary.setTotalNetPayLastPeriod(total);
-                }, () -> summary.setTotalNetPayLastPeriod(BigDecimal.ZERO));
 
         summary.setPendingLeaveRequests(leaveRequests.stream()
                 .filter(lr -> lr.getStatus() == LeaveRequest.Status.pending).count());

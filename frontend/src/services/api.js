@@ -48,6 +48,7 @@ export const deleteUser = (id) => api.delete(`/users/${id}`).then(res => res.dat
 
 // --- Employee Endpoints ---
 export const getEmployees = () => api.get('/employees').then(res => res.data);
+export const getMyEmployee = () => api.get('/employees/me').then(res => res.data);
 export const createEmployee = (data) => api.post('/employees', data).then(res => res.data);
 export const updateEmployee = (id, data) => api.put(`/employees/${id}`, data).then(res => res.data);
 export const deleteEmployee = (id) => api.delete(`/employees/${id}`).then(res => res.data);
@@ -72,15 +73,10 @@ export const approveLeaveRequest = (id, approverId) => api.patch(`/leave-request
 export const rejectLeaveRequest = (id, approverId) => api.patch(`/leave-requests/${id}/reject`, { approverId }).then(res => res.data);
 export const deleteLeaveRequest = (id) => api.delete(`/leave-requests/${id}`).then(res => res.data);
 
-// --- Payroll Endpoints ---
-export const getPayroll = (params) => api.get('/payroll', { params }).then(res => res.data);
-export const createPayroll = (data) => api.post('/payroll', data).then(res => res.data);
-export const updatePayroll = (id, data) => api.put(`/payroll/${id}`, data).then(res => res.data);
-export const deletePayroll = (id) => api.delete(`/payroll/${id}`).then(res => res.data);
-
-// --- Password Reset Endpoints ---
+// --- Password Endpoints ---
 export const forgotPassword = (usernameOrEmail) => api.post('/auth/forgot-password', { usernameOrEmail }).then(res => res.data);
 export const resetPassword = (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }).then(res => res.data);
+export const changePassword = (currentPassword, newPassword) => api.post('/auth/change-password', { currentPassword, newPassword }).then(res => res.data);
 
 // --- Leave Balance Endpoints ---
 export const getLeaveBalances = (params) => api.get('/leave-balances', { params }).then(res => res.data);
@@ -120,5 +116,50 @@ export const computeAttritionForEmployee = (employeeId) => api.post(`/attrition/
 
 // --- Analytics Endpoints ---
 export const getAnalyticsSummary = () => api.get('/analytics/summary').then(res => res.data);
+
+// --- CSV Export Utility ---
+// Converts an array of objects to a CSV file and triggers a browser download.
+export const exportToCsv = (filename, rows) => {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => headers.map(h => {
+      const cell = row[h] == null ? '' : String(row[h]);
+      // Escape commas and quotes inside cell values
+      return cell.includes(',') || cell.includes('"') || cell.includes('\n')
+        ? `"${cell.replace(/"/g, '""')}"` : cell;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+// --- Notifications ---
+export const getNotifications = async () => {
+  const res = await api.get('/notifications');
+  return res.data;
+};
+export const getUnreadCount = async () => {
+  const res = await api.get('/notifications/unread-count');
+  return res.data.count;
+};
+export const markNotificationRead = async (id) => {
+  await api.put(`/notifications/${id}/read`);
+};
+export const markAllNotificationsRead = async () => {
+  await api.put('/notifications/read-all');
+};
+
+// --- Profile Photo ---
+export const updateMyProfile = async (data) => {
+  const res = await api.put('/employees/me', data);
+  return res.data;
+};
 
 export default api;

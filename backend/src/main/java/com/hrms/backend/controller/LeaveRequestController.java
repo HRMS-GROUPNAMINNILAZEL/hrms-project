@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.backend.entity.LeaveRequest;
 import com.hrms.backend.services.LeaveRequestService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/leave-requests")
 public class LeaveRequestController {
@@ -47,26 +49,26 @@ public class LeaveRequestController {
     }
 
     @PostMapping
-    public ResponseEntity<LeaveRequest> createLeaveRequest(@RequestBody LeaveRequest leaveRequest) {
+    public ResponseEntity<LeaveRequest> createLeaveRequest(@Valid @RequestBody LeaveRequest leaveRequest) {
         LeaveRequest saved = leaveRequestService.createLeaveRequest(leaveRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LeaveRequest> updateLeaveRequest(@PathVariable("id") Integer leaveId,
-                                                              @RequestBody LeaveRequest leaveRequest) {
+                                                              @Valid @RequestBody LeaveRequest leaveRequest) {
         LeaveRequest updated = leaveRequestService.updateLeaveRequest(leaveId, leaveRequest);
         return ResponseEntity.ok(updated);
     }
 
-    // Body: { "approverId": 5 } - approverId must belong to a user with role "admin"
+    // Body: { "approverId": 5 } - approverId must belong to a user with role admin, hr, or manager
     @PatchMapping("/{id}/approve")
     public ResponseEntity<LeaveRequest> approveLeaveRequest(@PathVariable("id") Integer leaveId,
                                                                @RequestBody Map<String, Integer> body) {
         return ResponseEntity.ok(leaveRequestService.approveLeaveRequest(leaveId, body.get("approverId")));
     }
 
-    // Body: { "approverId": 5 } - approverId must belong to a user with role "admin"
+    // Body: { "approverId": 5 } - approverId must belong to a user with role admin, hr, or manager
     @PatchMapping("/{id}/reject")
     public ResponseEntity<LeaveRequest> rejectLeaveRequest(@PathVariable("id") Integer leaveId,
                                                               @RequestBody Map<String, Integer> body) {

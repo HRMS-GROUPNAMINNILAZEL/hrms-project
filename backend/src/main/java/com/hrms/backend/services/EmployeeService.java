@@ -24,6 +24,14 @@ public class EmployeeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
     }
 
+    // Used by the /employees/me endpoint so employees only fetch their own record
+    // instead of downloading the entire employee list.
+    public Employee getEmployeeByUserId(Integer userId) {
+        return employeeRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No employee profile is linked to user id: " + userId));
+    }
+
     public Employee createEmployee(Employee employee) {
         return employeeRepository.save(employee);
     }

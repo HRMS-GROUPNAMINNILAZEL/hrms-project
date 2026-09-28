@@ -14,51 +14,51 @@ import {
   createDepartment,
   updateDepartment,
   deleteDepartment,
-  getPayroll,
-  createPayroll,
-  updatePayroll,
-  deletePayroll,
   getLeaveRequests,
   approveLeaveRequest,
   rejectLeaveRequest,
-  deleteLeaveRequest
+  deleteLeaveRequest,
+  exportToCsv
 } from '../services/api';
 import LeaveBalancesTab from './admin/LeaveBalancesTab';
 import PerformanceReviewsTab from './admin/PerformanceReviewsTab';
 import SkillsTab from './admin/SkillsTab';
 import AttritionTab from './admin/AttritionTab';
 import AnalyticsTab from './admin/AnalyticsTab';
+import AttendanceTab from './admin/AttendanceTab';
+import DashboardCharts from './admin/DashboardCharts';
+import EmployeeDirectory from './admin/EmployeeDirectory';
 import Pagination from './admin/Pagination';
+import { IconDashboard, IconAnalytics, IconEmployees, IconDirectory, IconUsers, IconDepartment, IconLeave, IconLeaveBalance, IconAttendance, IconPerformance, IconSkills, IconAttrition, IconLogout, IconSun, IconMoon, IconRefresh, IconPlus, IconDownload } from '../components/Icons';
 
 const PAGE_SIZE = 10;
 
-// --- Shared inline style helpers (kept lightweight, consistent with the rest of the app) ---
-const btn = (bg) => ({ padding: '10px 18px', backgroundColor: bg, color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'background-color 0.15s ease, opacity 0.15s ease', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' });
-const smallBtn = (bg) => ({ padding: '7px 14px', backgroundColor: bg, color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', marginRight: '8px', transition: 'opacity 0.15s ease', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' });
-const badge = (bg, color) => ({ padding: '5px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', backgroundColor: bg, color, display: 'inline-flex', alignItems: 'center' });
+// --- Shared inline style helpers (InsightX-inspired design system) ---
+const btn = (bg) => ({ padding: '10px 18px', backgroundColor: bg, color: bg === '#84cc16' || bg === '#65a30d' ? '#09090b' : '#ffffff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s ease', letterSpacing: '0.01em' });
+const smallBtn = (bg) => ({ padding: '7px 14px', backgroundColor: bg, color: bg === '#84cc16' || bg === '#65a30d' ? '#09090b' : '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', marginRight: '8px', transition: 'all 0.2s ease' });
+const badge = (bg, color) => ({ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', backgroundColor: bg, color, display: 'inline-flex', alignItems: 'center' });
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDarkMode } = useTheme();
-  const table = { width: '100%', borderCollapse: 'separate', borderSpacing: '0', backgroundColor: theme.cardBg, boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${theme.border}` };
+  const table = { width: '100%', borderCollapse: 'separate', borderSpacing: '0', backgroundColor: theme.cardBg, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${theme.border}` };
   const thead = { backgroundColor: theme.tableHeaderBg, textAlign: 'left', borderBottom: `1px solid ${theme.border}` };
-  const th = { padding: '16px 20px', fontSize: '12px', fontWeight: '600', color: theme.text, textTransform: 'uppercase', letterSpacing: '0.04em' };
-  const td = { padding: '18px 20px', fontSize: '14px', color: theme.text, verticalAlign: 'middle' };
+  const th = { padding: '14px 20px', fontSize: '11px', fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' };
+  const td = { padding: '16px 20px', fontSize: '13px', color: theme.text, verticalAlign: 'middle' };
   const row = { borderBottom: `1px solid ${theme.border}`, transition: 'background-color 0.15s ease' };
-  const emptyRow = { padding: '48px 20px', textAlign: 'center', color: theme.textMuted, fontSize: '14px' };
-  const label = { display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: theme.text };
-  const input = { width: '100%', padding: '10px 14px', boxSizing: 'border-box', borderRadius: '6px', border: `1px solid ${theme.inputBorder}`, fontSize: '14px', color: theme.text, backgroundColor: theme.inputBg, outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' };
-  const modalOverlay = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 };
-  const modalBox = { backgroundColor: theme.cardBg, padding: '32px', borderRadius: '12px', width: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', color: theme.text, border: `1px solid ${theme.border}` };
+  const emptyRow = { padding: '48px 20px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' };
+  const label = { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: theme.text, letterSpacing: '0.01em' };
+  const input = { width: '100%', padding: '10px 14px', boxSizing: 'border-box', borderRadius: '10px', border: `1px solid ${theme.inputBorder}`, fontSize: '14px', color: theme.text, backgroundColor: theme.inputBg, outline: 'none', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' };
+  const modalOverlay = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 };
+  const modalBox = { backgroundColor: theme.cardBg, padding: '32px', borderRadius: '16px', width: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', color: theme.text, border: `1px solid ${theme.border}` };
   const [employees, setEmployees] = useState([]);
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [payroll, setPayroll] = useState([]);
   const [leaveRequests, setLeaveRequests] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('employees');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // --- Search / filter / pagination (client-side; datasets here are small) ---
   const [empSearch, setEmpSearch] = useState('');
@@ -117,13 +117,17 @@ export default function AdminDashboard() {
         const [deptData, empData] = await Promise.all([getDepartments(), getEmployees()]);
         setDepartments(deptData);
         setEmployees(empData);
-      } else if (activeTab === 'payroll') {
-        const [payData, empData] = await Promise.all([getPayroll(), getEmployees()]);
-        setPayroll(payData);
-        setEmployees(empData);
       } else if (activeTab === 'leaveRequests') {
         const leaveData = await getLeaveRequests();
         setLeaveRequests(leaveData);
+      } else if (activeTab === 'dashboard') {
+        const [empData, deptData, leaveData] = await Promise.all([getEmployees(), getDepartments(), getLeaveRequests()]);
+        setEmployees(empData);
+        setDepartments(deptData);
+        setLeaveRequests(leaveData);
+      } else if (activeTab === 'directory') {
+        const empData = await getEmployees();
+        setEmployees(empData);
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to fetch data from backend');
@@ -410,86 +414,6 @@ export default function AdminDashboard() {
   };
 
   // =========================================================================
-  // Payroll: Add / Edit / Delete
-  // =========================================================================
-  const [showPayrollModal, setShowPayrollModal] = useState(false);
-  const [payrollModalMode, setPayrollModalMode] = useState('add');
-  const [paySaving, setPaySaving] = useState(false);
-  const [editingPayroll, setEditingPayroll] = useState(null);
-  const emptyPayrollForm = { employeeId: '', payPeriodStart: '', payPeriodEnd: '', basicSalary: '', deductions: '0', bonuses: '0' };
-  const [payrollForm, setPayrollForm] = useState(emptyPayrollForm);
-
-  const openAddPayroll = () => {
-    setPayrollModalMode('add');
-    setEditingPayroll(null);
-    setPayrollForm(emptyPayrollForm);
-    setError('');
-    setShowPayrollModal(true);
-  };
-
-  const openEditPayroll = (p) => {
-    setPayrollModalMode('edit');
-    setEditingPayroll(p);
-    setPayrollForm({
-      employeeId: p.employee?.employeeId || '',
-      payPeriodStart: p.payPeriodStart || '',
-      payPeriodEnd: p.payPeriodEnd || '',
-      basicSalary: p.basicSalary ?? '',
-      deductions: p.deductions ?? '0',
-      bonuses: p.bonuses ?? '0'
-    });
-    setError('');
-    setShowPayrollModal(true);
-  };
-
-  const handlePayrollInputChange = (e) => setPayrollForm({ ...payrollForm, [e.target.name]: e.target.value });
-
-  const handleSavePayroll = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!payrollForm.employeeId) {
-      setError('Please select an employee.');
-      return;
-    }
-    setPaySaving(true);
-    try {
-      const payload = {
-        employee: { employeeId: Number(payrollForm.employeeId) },
-        payPeriodStart: payrollForm.payPeriodStart,
-        payPeriodEnd: payrollForm.payPeriodEnd,
-        basicSalary: Number(payrollForm.basicSalary),
-        deductions: Number(payrollForm.deductions || 0),
-        bonuses: Number(payrollForm.bonuses || 0)
-        // netPay is always derived server-side from the fields above
-      };
-      if (payrollModalMode === 'add') {
-        await createPayroll(payload);
-      } else {
-        await updatePayroll(editingPayroll.payrollId, payload);
-      }
-      setShowPayrollModal(false);
-      setPayrollForm(emptyPayrollForm);
-      setEditingPayroll(null);
-      loadData();
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to save payroll record');
-    } finally {
-      setPaySaving(false);
-    }
-  };
-
-  const handleDeletePayroll = async (p) => {
-    if (!window.confirm(`Delete this payroll record for ${p.employee?.firstName} ${p.employee?.lastName}?`)) return;
-    setError('');
-    try {
-      await deletePayroll(p.payrollId);
-      loadData();
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to delete payroll record');
-    }
-  };
-
-  // =========================================================================
   // Leave Requests: Approve / Reject / Delete
   // =========================================================================
   const handleApprove = async (id) => {
@@ -529,7 +453,7 @@ export default function AdminDashboard() {
         onClick={() => setActiveTab(itemKey)}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: isActive ? '#ffffff' : (hovered ? 'rgba(255, 255, 255, 0.08)' : 'transparent'), borderRadius: '6px', marginBottom: '6px', color: isActive ? '#000000' : '#ffffff', fontWeight: isActive ? '600' : '400', fontSize: '14px', transition: 'background-color 0.2s ease' }}
+        style={{ padding: '9px 14px', cursor: 'pointer', backgroundColor: isActive ? theme.sidebarActive : (hovered ? theme.sidebarHover : 'transparent'), borderRadius: '10px', marginBottom: '2px', color: isActive ? theme.sidebarActiveText : theme.sidebarText, fontWeight: isActive ? '600' : '400', fontSize: '13px', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.01em' }}
       >
         {icon} {text}
       </li>
@@ -537,36 +461,57 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="dashboard-shell" style={{ backgroundColor: theme.bg, fontFamily: 'sans-serif', color: theme.text }}>
+    <div className="dashboard-shell" style={{ backgroundColor: theme.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: theme.text }}>
       {/* Sidebar */}
-      <div className="dashboard-sidebar" style={{ backgroundColor: theme.sidebarBg, color: '#F8FAFC', padding: '24px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: `1px solid ${theme.border}` }}>
+      <div className="dashboard-sidebar" style={{ backgroundColor: theme.sidebarBg, padding: '20px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: `1px solid ${theme.border}` }}>
         <div>
-          <h2 style={{ fontSize: '18px', marginBottom: '32px', textAlign: 'center', color: '#FFFFFF', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>HRMS Admin</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px', padding: '4px 10px' }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, #84cc16, #65a30d)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(132,204,22,0.3)' }}>
+              <IconDashboard size={16} color="#fff" />
+            </div>
+            <span style={{ fontSize: '16px', fontWeight: '700', color: theme.text, letterSpacing: '-0.3px' }}>HRMS</span>
+          </div>
+
+          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>Main</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0' }}>
+            <SidebarItem itemKey="dashboard" icon={<IconDashboard size={16} />} text="Dashboard" />
+            <SidebarItem itemKey="analytics" icon={<IconAnalytics size={16} />} text="Analytics" />
+          </ul>
+
+          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>Management</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0' }}>
+            <SidebarItem itemKey="employees" icon={<IconEmployees size={16} />} text="Employees" />
+            <SidebarItem itemKey="directory" icon={<IconDirectory size={16} />} text="Directory" />
+            <SidebarItem itemKey="departments" icon={<IconDepartment size={16} />} text="Departments" />
+            <SidebarItem itemKey="leaveRequests" icon={<IconLeave size={16} />} text="Leave Requests" />
+            <SidebarItem itemKey="leaveBalances" icon={<IconLeaveBalance size={16} />} text="Leave Balances" />
+            <SidebarItem itemKey="attendance" icon={<IconAttendance size={16} />} text="Attendance" />
+          </ul>
+
+          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>Performance</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0' }}>
+            <SidebarItem itemKey="performanceReviews" icon={<IconPerformance size={16} />} text="Reviews" />
+            <SidebarItem itemKey="skills" icon={<IconSkills size={16} />} text="Skills & Gap" />
+            <SidebarItem itemKey="attrition" icon={<IconAttrition size={16} />} text="Attrition Risk" />
+          </ul>
+
+          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>System</div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            <SidebarItem itemKey="analytics" icon="📈" text="Analytics" />
-            <SidebarItem itemKey="employees" icon="👥" text="Employees" />
-            <SidebarItem itemKey="users" icon="🔐" text="System Users" />
-            <SidebarItem itemKey="departments" icon="🏢" text="Departments" />
-            <SidebarItem itemKey="payroll" icon="💰" text="Payroll" />
-            <SidebarItem itemKey="leaveRequests" icon="📝" text="Leave Requests" />
-            <SidebarItem itemKey="leaveBalances" icon="📊" text="Leave Balances" />
-            <SidebarItem itemKey="performanceReviews" icon="⭐" text="Performance Reviews" />
-            <SidebarItem itemKey="skills" icon="🧩" text="Skills & Gap Analysis" />
-            <SidebarItem itemKey="attrition" icon="⚠️" text="Attrition Risk" />
+            <SidebarItem itemKey="users" icon={<IconUsers size={16} />} text="System Users" />
           </ul>
         </div>
         <div>
-          <div style={{ padding: '12px 14px', backgroundColor: '#0F172A', borderRadius: '8px', marginBottom: '12px', border: '1px solid #334155' }}>
-            <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, marginBottom: '2px' }}>Logged in as</p>
-            <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>{user.username}</strong>
+          <div style={{ padding: '12px 14px', backgroundColor: theme.cardBg, borderRadius: '12px', marginBottom: '10px', border: `1px solid ${theme.border}` }}>
+            <div style={{ fontSize: '10px', color: theme.textSecondary || theme.textMuted, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Logged in as</div>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: theme.text }}>{user.username}</div>
           </div>
           <button
             onClick={logout}
-            style={{ width: '100%', padding: '10px', backgroundColor: '#DC2626', color: '#f8fafc', border: '1px solid #7f1d1d', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'background-color 0.15s ease' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7f1d1d'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#DC2626'}
+            style={{ width: '100%', padding: '10px', backgroundColor: 'transparent', color: '#ef4444', border: `1px solid ${theme.border}`, borderRadius: '10px', cursor: 'pointer', fontWeight: '500', fontSize: '13px', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = '#ef4444'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = theme.border; }}
           >
-            Logout
+            <IconLogout size={14} /> Logout
           </button>
         </div>
       </div>
@@ -574,42 +519,58 @@ export default function AdminDashboard() {
       {/* Main Content Area */}
       <div className="dashboard-main">
         <div className="dashboard-header">
-          <h1 style={{ fontSize: '24px', fontWeight: '600', color: theme.text, margin: 0 }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '700', color: theme.text, margin: 0, letterSpacing: '-0.5px' }}>
+            {activeTab === 'dashboard' && 'Dashboard'}
             {activeTab === 'analytics' && 'Analytics Overview'}
-            {activeTab === 'employees' && 'Employee Directory'}
+            {activeTab === 'employees' && 'Employee Management'}
+            {activeTab === 'directory' && 'Employee Directory'}
             {activeTab === 'users' && 'System Users'}
             {activeTab === 'departments' && 'Departments'}
-            {activeTab === 'payroll' && 'Payroll'}
-            {activeTab === 'leaveRequests' && 'Leave Requests Management'}
+
+            {activeTab === 'leaveRequests' && 'Leave Requests'}
             {activeTab === 'leaveBalances' && 'Leave Balances'}
             {activeTab === 'performanceReviews' && 'Performance Reviews'}
             {activeTab === 'skills' && 'Skills & Gap Analysis'}
-            {activeTab === 'attrition' && 'Attrition Risk Dashboard'}
+            {activeTab === 'attrition' && 'Attrition Risk'}
+            {activeTab === 'attendance' && 'Attendance Records'}
           </h1>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {activeTab === 'employees' && (
-              <button onClick={() => setShowModal(true)} style={btn(theme.primary)}>+ Add Employee</button>
+              <>
+                <button onClick={() => setShowModal(true)} style={{ ...btn(theme.primary), color: theme.primaryText, display: 'flex', alignItems: 'center', gap: '6px' }}><IconPlus size={14} /> Add Employee</button>
+                <button onClick={() => {
+                  const rows = employees.map(e => ({
+                    ID: e.employeeId,
+                    'First Name': e.firstName,
+                    'Last Name': e.lastName,
+                    Department: e.department?.departmentName || '',
+                    Position: e.position || '',
+                    Status: e.status,
+                    'Hire Date': e.hireDate,
+                    Contact: e.contactNumber || '',
+                  }));
+                  exportToCsv('employees.csv', rows);
+                }} style={{ ...btn(theme.cardBg), color: theme.text, border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '6px' }}><IconDownload size={14} /> Export</button>
+              </>
             )}
             {activeTab === 'users' && (
-              <button onClick={openAddUser} style={btn(theme.primary)}>+ Add User</button>
+              <button onClick={openAddUser} style={{ ...btn(theme.primary), color: theme.primaryText, display: 'flex', alignItems: 'center', gap: '6px' }}><IconPlus size={14} /> Add User</button>
             )}
             {activeTab === 'departments' && (
-              <button onClick={openAddDept} style={btn(theme.primary)}>+ Add Department</button>
+              <button onClick={openAddDept} style={{ ...btn(theme.primary), color: theme.primaryText, display: 'flex', alignItems: 'center', gap: '6px' }}><IconPlus size={14} /> Add Department</button>
             )}
-            {activeTab === 'payroll' && (
-              <button onClick={openAddPayroll} style={btn(theme.primary)}>+ Add Payroll Record</button>
-            )}
-            <button onClick={loadData} style={{ ...btn(theme.cardBg), color: theme.text, border: `1px solid ${theme.border}` }}>Refresh</button>
+
+            <button onClick={loadData} style={{ ...btn(theme.cardBg), color: theme.text, border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '6px' }}><IconRefresh size={14} /> Refresh</button>
             <button
               onClick={toggleTheme}
-              style={{ padding: '10px 14px', backgroundColor: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+              style={{ padding: '10px 14px', backgroundColor: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}
             >
-              {isDarkMode ? '☀ Light' : '🌙 Dark'}
+              {isDarkMode ? <><IconSun size={14} /> Light</> : <><IconMoon size={14} /> Dark</>}
             </button>
           </div>
         </div>
 
-        {error && <div style={{ color: isDarkMode ? '#fca5a5' : '#991b1b', marginBottom: '24px', backgroundColor: isDarkMode ? '#450a0a' : '#fee2e2', padding: '14px 18px', borderRadius: '8px', border: `1px solid ${isDarkMode ? '#991b1b' : '#fecaca'}`, fontSize: '14px' }}>{error}</div>}
+        {error && <div style={{ color: theme.dangerText, marginBottom: '24px', backgroundColor: theme.dangerBg, padding: '14px 18px', borderRadius: '12px', border: `1px solid ${theme.dangerBorder}`, fontSize: '13px' }}>{error}</div>}
 
         {/* ---------------- Add Employee Modal ---------------- */}
         {showModal && (
@@ -871,58 +832,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* ---------------- Add / Edit Payroll Modal ---------------- */}
-        {showPayrollModal && (
-          <div style={modalOverlay}>
-            <div style={modalBox}>
-              <h3>{payrollModalMode === 'add' ? 'Add Payroll Record' : 'Edit Payroll Record'}</h3>
-              <form onSubmit={handleSavePayroll}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={label}>Employee *</label>
-                  <select name="employeeId" value={payrollForm.employeeId} onChange={handlePayrollInputChange} required style={input}>
-                    <option value="">Select Employee...</option>
-                    {employees.map(emp => (
-                      <option key={emp.employeeId} value={emp.employeeId}>{emp.firstName} {emp.lastName}</option>
-                    ))}
-                  </select>
-                </div>
 
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={label}>Pay Period Start *</label>
-                    <input type="date" name="payPeriodStart" value={payrollForm.payPeriodStart} onChange={handlePayrollInputChange} required style={input} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={label}>Pay Period End *</label>
-                    <input type="date" name="payPeriodEnd" value={payrollForm.payPeriodEnd} onChange={handlePayrollInputChange} required style={input} />
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={label}>Basic Salary (₱) *</label>
-                  <input type="number" step="0.01" min="0" name="basicSalary" value={payrollForm.basicSalary} onChange={handlePayrollInputChange} required style={input} />
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={label}>Deductions (₱)</label>
-                    <input type="number" step="0.01" min="0" name="deductions" value={payrollForm.deductions} onChange={handlePayrollInputChange} style={input} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={label}>Bonuses (₱)</label>
-                    <input type="number" step="0.01" min="0" name="bonuses" value={payrollForm.bonuses} onChange={handlePayrollInputChange} style={input} />
-                  </div>
-                </div>
-                <p style={{ fontSize: '12px', color: '#6c757d', marginTop: '-10px', marginBottom: '20px' }}>Net pay is calculated automatically: basic salary − deductions + bonuses.</p>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                  <button type="button" onClick={() => { setShowPayrollModal(false); setEditingPayroll(null); }} disabled={paySaving} style={btn('#6c757d')}>Cancel</button>
-                  <button type="submit" disabled={paySaving} style={btn('#007bff')}>{paySaving ? 'Saving...' : 'Save Payroll Record'}</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
 
         {loading ? (
           <p>Loading data from MySQL / Spring Boot...</p>
@@ -1087,44 +997,7 @@ export default function AdminDashboard() {
               </table>
             )}
 
-            {/* ---------------- Payroll Table ---------------- */}
-            {activeTab === 'payroll' && (
-              <table style={table}>
-                <thead>
-                  <tr style={thead}>
-                    <th style={th}>ID</th>
-                    <th style={th}>Employee</th>
-                    <th style={th}>Pay Period</th>
-                    <th style={th}>Basic Salary</th>
-                    <th style={th}>Deductions</th>
-                    <th style={th}>Bonuses</th>
-                    <th style={th}>Net Pay</th>
-                    <th style={th}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payroll.length === 0 ? (
-                    <tr><td colSpan="8" style={emptyRow}>No payroll records found.</td></tr>
-                  ) : (
-                    payroll.map((p) => (
-                      <tr key={p.payrollId} style={row}>
-                        <td style={td}>{p.payrollId}</td>
-                        <td style={td}>{p.employee ? `${p.employee.firstName} ${p.employee.lastName}` : 'N/A'}</td>
-                        <td style={td}>{p.payPeriodStart} to {p.payPeriodEnd}</td>
-                        <td style={td}>₱{Number(p.basicSalary ?? 0).toFixed(2)}</td>
-                        <td style={td}>₱{Number(p.deductions ?? 0).toFixed(2)}</td>
-                        <td style={td}>₱{Number(p.bonuses ?? 0).toFixed(2)}</td>
-                        <td style={td}><strong>₱{Number(p.netPay ?? 0).toFixed(2)}</strong></td>
-                        <td style={td}>
-                          <button onClick={() => openEditPayroll(p)} style={smallBtn('#ffc107')}>Edit</button>
-                          <button onClick={() => handleDeletePayroll(p)} style={smallBtn('#dc3545')}>Delete</button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            )}
+
 
             {/* ---------------- Leave Requests Table ---------------- */}
             {activeTab === 'leaveRequests' && (
@@ -1153,21 +1026,21 @@ export default function AdminDashboard() {
                         <td style={td}>{req.reason || 'N/A'}</td>
                         <td style={td}>
                           <span style={badge(
-                            req.status === 'approved' ? '#d4edda' : req.status === 'rejected' ? '#f8d7da' : '#fff3cd',
-                            req.status === 'approved' ? '#155724' : req.status === 'rejected' ? '#721c24' : '#856404'
+                            req.status === 'approved' ? (isDarkMode ? '#064e3b' : '#d4edda') : req.status === 'rejected' ? (isDarkMode ? '#7f1d1d' : '#f8d7da') : (isDarkMode ? '#78350f' : '#fff3cd'),
+                            req.status === 'approved' ? (isDarkMode ? '#6ee7b7' : '#155724') : req.status === 'rejected' ? (isDarkMode ? '#fca5a5' : '#721c24') : (isDarkMode ? '#fbbf24' : '#856404')
                           )}>
                             {req.status}
                           </span>
                         </td>
                         <td style={td}>
                           {req.status === 'pending' ? (
-                            user.role === 'admin' ? (
+                            (user.role === 'admin' || user.role === 'hr' || user.role === 'manager') ? (
                               <div style={{ display: 'flex', gap: '6px' }}>
                                 <button onClick={() => handleApprove(req.leaveId)} style={smallBtn('#28a745')}>Approve</button>
                                 <button onClick={() => handleReject(req.leaveId)} style={smallBtn('#dc3545')}>Reject</button>
                               </div>
                             ) : (
-                              <span style={{ fontSize: '12px', color: '#6c757d' }}>Awaiting admin</span>
+                              <span style={{ fontSize: '12px', color: '#6c757d' }}>Awaiting approval</span>
                             )
                           ) : (
                             <button onClick={() => handleDeleteLeaveRequest(req)} style={smallBtn('#dc3545')}>Delete</button>
@@ -1192,6 +1065,19 @@ export default function AdminDashboard() {
             {/* ---------------- Attrition Risk Dashboard ---------------- */}
             {activeTab === 'attrition' && <AttritionTab />}
             {activeTab === 'analytics' && <AnalyticsTab />}
+
+            {/* ---------------- Attendance Records ---------------- */}
+            {activeTab === 'attendance' && <AttendanceTab />}
+
+            {/* ---------------- Dashboard Charts ---------------- */}
+            {activeTab === 'dashboard' && (
+              <DashboardCharts employees={employees} departments={departments} leaveRequests={leaveRequests} theme={theme} isDarkMode={isDarkMode} />
+            )}
+
+            {/* ---------------- Employee Directory ---------------- */}
+            {activeTab === 'directory' && (
+              <EmployeeDirectory employees={employees} theme={theme} isDarkMode={isDarkMode} />
+            )}
           </div>
         )}
       </div>

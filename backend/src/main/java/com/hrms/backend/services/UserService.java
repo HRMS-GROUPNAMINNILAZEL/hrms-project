@@ -75,4 +75,22 @@ public class UserService {
 
         return user;
     }
+
+    // Self-service password change: verifies the old password first, then hashes
+    // and stores the new one.  Throws BadCredentialsException if the old password
+    // doesn't match so the frontend can show a clear error.
+    public void changePassword(Integer userId, String currentPassword, String newPassword) {
+        User user = getUserById(userId);
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BadCredentialsException("Current password is incorrect");
+        }
+
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalStateException("New password must be at least 6 characters");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

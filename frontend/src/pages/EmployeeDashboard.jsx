@@ -2,19 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { 
-  getEmployees, 
+  getMyEmployee, 
   updateEmployee,
+  updateMyProfile,
   getLeaveRequests, 
   createLeaveRequest, 
   deleteLeaveRequest,
   getAttendance, 
   createAttendance,
   updateAttendance,
-  getPayroll 
+  changePassword,
+  getNotifications,
+  getUnreadCount,
+  markNotificationRead,
+  markAllNotificationsRead
 } from '../services/api';
 import MyLeaveBalances from './employee/MyLeaveBalances';
 import MyPerformanceReviews from './employee/MyPerformanceReviews';
 import MySkills from './employee/MySkills';
+import { IconDashboard, IconProfile, IconLeave, IconAttendance, IconPerformance, IconSkills, IconPassword, IconLogout, IconSun, IconMoon, IconBell, IconCamera } from '../components/Icons';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 const nowTimeStr = () => new Date().toTimeString().split(' ')[0]; // "HH:MM:SS"
@@ -22,15 +28,14 @@ const nowTimeStr = () => new Date().toTimeString().split(' ')[0]; // "HH:MM:SS"
 export default function EmployeeDashboard() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDarkMode } = useTheme();
-  const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, backgroundColor: theme.cardBg, boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px 0 rgba(0,0,0,0.03)', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${theme.border}` };
+  const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, backgroundColor: theme.cardBg, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${theme.border}` };
   const theadStyle = { backgroundColor: theme.tableHeaderBg, textAlign: 'left', borderBottom: `1px solid ${theme.border}` };
-  const errorBoxStyle = { color: isDarkMode ? '#fca5a5' : '#b91c1c', marginBottom: '20px', backgroundColor: isDarkMode ? '#450a0a' : '#fee2e2', padding: '12px 16px', borderRadius: '6px', fontSize: '14px', border: `1px solid ${isDarkMode ? '#991b1b' : '#fecaca'}` };
+  const errorBoxStyle = { color: theme.dangerText, marginBottom: '20px', backgroundColor: theme.dangerBg, padding: '12px 16px', borderRadius: '12px', fontSize: '13px', border: `1px solid ${theme.dangerBorder}` };
   const [employeeProfile, setEmployeeProfile] = useState(null);
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [attendance, setAttendance] = useState([]);
-  const [payroll, setPayroll] = useState([]);
   
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -52,23 +57,57 @@ export default function EmployeeDashboard() {
   const [profileForm, setProfileForm] = useState({ contactNumber: '', address: '' });
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Change password state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState({ type: '', text: '' });
+
+  // Notifications state
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+
+  // Profile photo state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   useEffect(() => {
     loadEmployeeData();
+    loadNotifications();
+    const interval = setInterval(() => { getUnreadCount().then(setUnreadCount).catch(() => {}); }, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const [notifs, count] = await Promise.all([getNotifications(), getUnreadCount()]);
+      setNotifications(notifs);
+      setUnreadCount(count);
+    } catch (e) { /* ignore */ }
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file || !employeeProfile) return;
+    if (file.size > 2000000) { setActionError('Image must be under 2MB'); return; }
+    setUploadingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const updated = await updateMyProfile({ ...employeeProfile, profilePhoto: reader.result });
+        setEmployeeProfile(updated);
+      } catch (err) { setActionError('Failed to upload photo'); }
+      setUploadingPhoto(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const loadEmployeeData = async () => {
     setLoading(true);
     setError('');
     try {
-      // 1. Fetch all employees to find the one matching the logged-in user's userId
-      const employees = await getEmployees();
-      const currentEmp = employees.find(emp => emp.user && emp.user.userId === user.userId);
-      
-      if (!currentEmp) {
-        setError('No employee profile is linked to this user account yet. Contact Admin.');
-        setLoading(false);
-        return;
-      }
+      // Fetch only the current employee record via /employees/me
+      const currentEmp = await getMyEmployee();
 
       setEmployeeProfile(currentEmp);
       setProfileForm({
@@ -84,8 +123,7 @@ export default function EmployeeDashboard() {
       const att = await getAttendance({ employeeId: empId });
       setAttendance(att);
 
-      const pay = await getPayroll({ employeeId: empId });
-      setPayroll(pay);
+
 
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to load employee data');
@@ -235,7 +273,7 @@ export default function EmployeeDashboard() {
         onClick={() => setActiveTab(itemKey)}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: isActive ? '#24324a' : (hovered ? '#1f2d42' : 'transparent'), borderRadius: '6px', marginBottom: '8px', fontSize: '14px', color: isActive ? '#ffffff' : '#94a3b8', fontWeight: isActive ? '500' : 'normal', transition: 'background-color 0.2s, color 0.2s' }}
+        style={{ padding: '9px 14px', cursor: 'pointer', backgroundColor: isActive ? theme.sidebarActive : (hovered ? theme.sidebarHover : 'transparent'), borderRadius: '10px', marginBottom: '2px', fontSize: '13px', color: isActive ? theme.sidebarActiveText : theme.sidebarText, fontWeight: isActive ? '600' : '400', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.01em' }}
       >
         {icon} {text}
       </li>
@@ -244,39 +282,63 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="dashboard-shell" style={{ backgroundColor: theme.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: theme.text }}>
-      {/* Sidebar matching screenshot layout precisely */}
-      <div className="dashboard-sidebar" style={{ backgroundColor: theme.sidebarBg, color: '#ffffff', padding: '32px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div className="dashboard-sidebar" style={{ backgroundColor: theme.sidebarBg, padding: '20px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: `1px solid ${theme.border}` }}>
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '24px', textAlign: 'center', color: '#ffffff', letterSpacing: '0.5px' }}>Employee Portal</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '4px 10px' }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, #84cc16, #65a30d)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(132,204,22,0.3)' }}>
+              <IconDashboard size={16} color="#fff" />
+            </div>
+            <span style={{ fontSize: '16px', fontWeight: '700', color: theme.text, letterSpacing: '-0.3px' }}>HRMS</span>
+          </div>
           {employeeProfile && (
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                {employeeProfile.position}
+            <div style={{ textAlign: 'center', marginBottom: '20px', padding: '16px', backgroundColor: theme.cardBg, borderRadius: '14px', border: `1px solid ${theme.border}` }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '50%', margin: '0 auto 10px', overflow: 'hidden', border: `2px solid ${theme.border}`, backgroundColor: theme.inputBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {employeeProfile.profilePhoto ? (
+                  <img src={employeeProfile.profilePhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <IconProfile size={24} color={theme.textMuted} />
+                )}
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: theme.text }}>
                 {employeeProfile.firstName} {employeeProfile.lastName}
+              </div>
+              <div style={{ fontSize: '10px', color: theme.textSecondary || theme.textMuted, marginTop: '3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {employeeProfile.position}
               </div>
             </div>
           )}
+
+          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>Main</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0' }}>
+            <EmployeeSidebarItem itemKey="overview" icon={<IconDashboard size={16} />} text="Overview" />
+            <EmployeeSidebarItem itemKey="profile" icon={<IconProfile size={16} />} text="My Profile" />
+          </ul>
+
+          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>Work</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0' }}>
+            <EmployeeSidebarItem itemKey="leaves" icon={<IconLeave size={16} />} text="Leave Requests" />
+            <EmployeeSidebarItem itemKey="attendance" icon={<IconAttendance size={16} />} text="Attendance" />
+            <EmployeeSidebarItem itemKey="myPerformance" icon={<IconPerformance size={16} />} text="Performance" />
+            <EmployeeSidebarItem itemKey="mySkills" icon={<IconSkills size={16} />} text="My Skills" />
+          </ul>
+
+          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>Account</div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            <EmployeeSidebarItem itemKey="profile" icon="🙍" text="My Profile" />
-            <EmployeeSidebarItem itemKey="leaves" icon="📝" text="My Leave Requests" />
-            <EmployeeSidebarItem itemKey="attendance" icon="🕒" text="My Attendance" />
-            <EmployeeSidebarItem itemKey="payroll" icon="💰" text="My Payroll History" />
-            <EmployeeSidebarItem itemKey="myPerformance" icon="⭐" text="My Performance" />
-            <EmployeeSidebarItem itemKey="mySkills" icon="🧩" text="My Skills" />
+            <EmployeeSidebarItem itemKey="changePassword" icon={<IconPassword size={16} />} text="Change Password" />
           </ul>
         </div>
-        <div style={{ backgroundColor: '#101722', padding: '16px', borderRadius: '8px', border: '1px solid #24324a' }}>
-          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px', textAlign: 'center' }}>Logged in as</div>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>{user.username}</div>
+        <div>
+          <div style={{ padding: '12px 14px', backgroundColor: theme.cardBg, borderRadius: '12px', marginBottom: '10px', border: `1px solid ${theme.border}` }}>
+            <div style={{ fontSize: '10px', color: theme.textSecondary || theme.textMuted, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Logged in as</div>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: theme.text }}>{user.username}</div>
+          </div>
           <button
             onClick={logout}
-            style={{ width: '100%', padding: '10px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', transition: 'background-color 0.2s' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+            style={{ width: '100%', padding: '10px', backgroundColor: 'transparent', color: '#ef4444', border: `1px solid ${theme.border}`, borderRadius: '10px', cursor: 'pointer', fontWeight: '500', fontSize: '13px', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = '#ef4444'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = theme.border; }}
           >
-            Logout
+            <IconLogout size={14} /> Logout
           </button>
         </div>
       </div>
@@ -284,28 +346,59 @@ export default function EmployeeDashboard() {
       {/* Main Content Area */}
       <div className="dashboard-main">
         <div className="dashboard-header">
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: theme.text, margin: 0 }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '700', color: theme.text, margin: 0, letterSpacing: '-0.5px' }}>
+            {activeTab === 'overview' && 'Dashboard'}
             {activeTab === 'profile' && 'My Profile'}
-            {activeTab === 'leaves' && 'My Leave Requests'}
-            {activeTab === 'attendance' && 'My Attendance Logs'}
-            {activeTab === 'payroll' && 'My Payroll History'}
-            {activeTab === 'myPerformance' && 'My Performance Reviews'}
+            {activeTab === 'leaves' && 'Leave Requests'}
+            {activeTab === 'attendance' && 'Attendance'}
+
+            {activeTab === 'myPerformance' && 'Performance Reviews'}
             {activeTab === 'mySkills' && 'My Skills'}
+            {activeTab === 'changePassword' && 'Change Password'}
           </h1>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {activeTab === 'leaves' && (
               <button 
                 onClick={() => setShowLeaveModal(true)} 
-                style={{ padding: '8px 16px', cursor: 'pointer', backgroundColor: theme.primary, color: 'white', border: 'none', borderRadius: '6px', fontWeight: '500', fontSize: '14px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}
+                style={{ padding: '9px 16px', cursor: 'pointer', backgroundColor: theme.primary, color: theme.primaryText, border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}
               >
                 + Request Leave
               </button>
             )}
+            {activeTab === 'profile' && (
+              <button onClick={() => window.print()} style={{ padding: '9px 14px', backgroundColor: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print
+              </button>
+            )}
+            {/* Notification Bell */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => { setShowNotifDropdown(!showNotifDropdown); if (!showNotifDropdown) loadNotifications(); }} style={{ padding: '9px 12px', backgroundColor: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: '10px', cursor: 'pointer', fontSize: '14px', position: 'relative', display: 'flex', alignItems: 'center', transition: 'all 0.2s ease' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                {unreadCount > 0 && <span style={{ position: 'absolute', top: '-4px', right: '-4px', backgroundColor: '#ef4444', color: 'white', borderRadius: '50%', width: '17px', height: '17px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>{unreadCount}</span>}
+              </button>
+              {showNotifDropdown && (
+                <div style={{ position: 'absolute', right: 0, top: '44px', width: '320px', maxHeight: '400px', overflowY: 'auto', backgroundColor: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '14px', boxShadow: '0 16px 48px rgba(0,0,0,0.3)', zIndex: 1000 }}>
+                  <div style={{ padding: '14px 16px', borderBottom: `1px solid ${theme.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong style={{ fontSize: '14px', color: theme.text }}>Notifications</strong>
+                    {unreadCount > 0 && <button onClick={async () => { await markAllNotificationsRead(); loadNotifications(); }} style={{ fontSize: '12px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: '500' }}>Mark all read</button>}
+                  </div>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: '32px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>No notifications yet</div>
+                  ) : notifications.slice(0, 20).map(n => (
+                    <div key={n.notificationId} onClick={async () => { if (!n.isRead) { await markNotificationRead(n.notificationId); loadNotifications(); } }} style={{ padding: '12px 16px', borderBottom: `1px solid ${theme.border}`, cursor: 'pointer', backgroundColor: n.isRead ? 'transparent' : theme.accentBg, fontSize: '13px', transition: 'background-color 0.15s ease' }}>
+                      <div style={{ color: theme.text }}>{n.type === 'leave_approved' ? '✓' : n.type === 'leave_rejected' ? '✕' : '●'} {n.message}</div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '4px' }}>{new Date(n.createdAt).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={toggleTheme}
-              style={{ padding: '8px 14px', backgroundColor: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+              style={{ padding: '9px 14px', backgroundColor: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}
             >
-              {isDarkMode ? '☀ Light' : '🌙 Dark'}
+              {isDarkMode ? <><IconSun size={14} /> Light</> : <><IconMoon size={14} /> Dark</>}
             </button>
           </div>
         </div>
@@ -315,8 +408,8 @@ export default function EmployeeDashboard() {
 
         {/* Leave Request Modal */}
         {showLeaveModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-            <div style={{ backgroundColor: theme.cardBg, color: theme.text, padding: '30px', borderRadius: '8px', width: '400px', border: `1px solid ${theme.border}` }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+            <div style={{ backgroundColor: theme.cardBg, color: theme.text, padding: '32px', borderRadius: '16px', width: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
               <h3>Submit Leave Request</h3>
               <form onSubmit={handleSubmitLeave}>
                 <div style={{ marginBottom: '12px' }}>
@@ -369,9 +462,23 @@ export default function EmployeeDashboard() {
         )}
 
         {activeTab === 'profile' && employeeProfile && (
-          <div style={{ backgroundColor: theme.cardBg, color: theme.text, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '4px', padding: '24px', maxWidth: '600px', border: `1px solid ${theme.border}` }}>
+          <div id="profile-printable" style={{ backgroundColor: theme.cardBg, color: theme.text, boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '4px', padding: '24px', maxWidth: '600px', border: `1px solid ${theme.border}` }}>
             {!editingProfile ? (
               <>
+                {/* Profile Photo */}
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', margin: '0 auto 10px', overflow: 'hidden', border: `2px solid ${theme.border}`, backgroundColor: isDarkMode ? '#1e293b' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {employeeProfile.profilePhoto ? (
+                      <img src={employeeProfile.profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '32px' }}>👤</span>
+                    )}
+                  </div>
+                  <label style={{ fontSize: '12px', color: theme.primary, cursor: 'pointer' }}>
+                    {uploadingPhoto ? 'Uploading...' : '📷 Change Photo'}
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                  </label>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', rowGap: '14px' }}>
                   <div style={{ color: '#6c757d', fontSize: '13px' }}>Full Name</div>
                   <div>{employeeProfile.firstName} {employeeProfile.lastName}</div>
@@ -459,8 +566,8 @@ export default function EmployeeDashboard() {
                         padding: '4px 8px', 
                         borderRadius: '4px', 
                         fontSize: '12px', 
-                        backgroundColor: req.status === 'approved' ? '#d4edda' : req.status === 'rejected' ? '#f8d7da' : '#fff3cd', 
-                        color: req.status === 'approved' ? '#155724' : req.status === 'rejected' ? '#721c24' : '#856404' 
+                        backgroundColor: req.status === 'approved' ? (isDarkMode ? '#064e3b' : '#d4edda') : req.status === 'rejected' ? (isDarkMode ? '#7f1d1d' : '#f8d7da') : (isDarkMode ? '#78350f' : '#fff3cd'), 
+                        color: req.status === 'approved' ? (isDarkMode ? '#6ee7b7' : '#155724') : req.status === 'rejected' ? (isDarkMode ? '#fca5a5' : '#721c24') : (isDarkMode ? '#fbbf24' : '#856404') 
                       }}>
                         {req.status}
                       </span>
@@ -549,34 +656,103 @@ export default function EmployeeDashboard() {
           </div>
         )}
 
-        {activeTab === 'payroll' && (
-          <table style={tableStyle}>
-            <thead>
-              <tr style={theadStyle}>
-                <th style={{ padding: '12px' }}>Pay Period</th>
-                <th style={{ padding: '12px' }}>Basic Salary</th>
-                <th style={{ padding: '12px' }}>Deductions</th>
-                <th style={{ padding: '12px' }}>Bonuses</th>
-                <th style={{ padding: '12px' }}>Net Pay</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payroll.length === 0 ? (
-                <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>No payroll history found.</td></tr>
-              ) : (
-                payroll.map((pay) => (
-                  <tr key={pay.payrollId} style={{ borderBottom: '1px solid #dee2e6' }}>
-                    <td style={{ padding: '12px' }}>{pay.payPeriodStart} to {pay.payPeriodEnd}</td>
-                    <td style={{ padding: '12px' }}>₱{pay.basicSalary?.toFixed(2)}</td>
-                    <td style={{ padding: '12px' }}>₱{pay.deductions?.toFixed(2)}</td>
-                    <td style={{ padding: '12px' }}>₱{pay.bonuses?.toFixed(2)}</td>
-                    <td style={{ padding: '12px' }}><strong>₱{pay.netPay?.toFixed(2)}</strong></td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* ---------------- Overview Tab ---------------- */}
+        {activeTab === 'overview' && employeeProfile && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              {[
+                { label: 'Total Leaves', count: leaveRequests.length, color: isDarkMode ? '#93c5fd' : '#1e40af', bg: isDarkMode ? '#1e3a5f' : '#dbeafe', icon: '📝' },
+                { label: 'Approved', count: leaveRequests.filter(l => l.status === 'approved').length, color: isDarkMode ? '#6ee7b7' : '#065f46', bg: isDarkMode ? '#064e3b' : '#d1fae5', icon: '✅' },
+                { label: 'Pending', count: leaveRequests.filter(l => l.status === 'pending').length, color: isDarkMode ? '#fbbf24' : '#92400e', bg: isDarkMode ? '#78350f' : '#fef3c7', icon: '⏳' },
+                { label: 'Attendance Records', count: attendance.length, color: isDarkMode ? '#c4b5fd' : '#5b21b6', bg: isDarkMode ? '#4c1d95' : '#ede9fe', icon: '🕒' },
+              ].map(c => (
+                <div key={c.label} style={{ backgroundColor: c.bg, padding: '24px', borderRadius: '10px', textAlign: 'center', border: `1px solid ${theme.border}` }}>
+                  <div style={{ fontSize: '28px', marginBottom: '8px' }}>{c.icon}</div>
+                  <div style={{ fontSize: '32px', fontWeight: 'bold', color: c.color }}>{c.count}</div>
+                  <div style={{ fontSize: '13px', color: c.color, opacity: 0.8, marginTop: '4px' }}>{c.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ backgroundColor: theme.cardBg, padding: '24px', borderRadius: '10px', border: `1px solid ${theme.border}` }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.text, marginTop: 0, marginBottom: '16px' }}>👋 Welcome, {employeeProfile.firstName}!</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px', color: theme.text }}>
+                <div><strong>Position:</strong> {employeeProfile.position || 'N/A'}</div>
+                <div><strong>Department:</strong> {employeeProfile.department?.departmentName || 'N/A'}</div>
+                <div><strong>Status:</strong> <span style={{ textTransform: 'capitalize' }}>{employeeProfile.status}</span></div>
+                <div><strong>Hire Date:</strong> {employeeProfile.hireDate}</div>
+              </div>
+            </div>
+          </div>
         )}
+
+        {/* ---------------- Change Password Tab ---------------- */}
+        {activeTab === 'changePassword' && (
+          <div style={{ maxWidth: '480px' }}>
+            <div style={{ backgroundColor: theme.cardBg, padding: '32px', borderRadius: '10px', border: `1px solid ${theme.border}` }}>
+              {passwordMsg.text && (
+                <div style={{
+                  padding: '12px 16px', borderRadius: '6px', marginBottom: '20px', fontSize: '14px',
+                  backgroundColor: passwordMsg.type === 'success' ? (isDarkMode ? '#064e3b' : '#d1fae5') : (isDarkMode ? '#450a0a' : '#fee2e2'),
+                  color: passwordMsg.type === 'success' ? (isDarkMode ? '#6ee7b7' : '#065f46') : (isDarkMode ? '#fca5a5' : '#b91c1c'),
+                  border: `1px solid ${passwordMsg.type === 'success' ? (isDarkMode ? '#065f46' : '#6ee7b7') : (isDarkMode ? '#991b1b' : '#fecaca')}`
+                }}>
+                  {passwordMsg.text}
+                </div>
+              )}
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setPasswordMsg({ type: '', text: '' });
+                if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                  setPasswordMsg({ type: 'error', text: 'New passwords do not match' });
+                  return;
+                }
+                if (passwordForm.newPassword.length < 6) {
+                  setPasswordMsg({ type: 'error', text: 'New password must be at least 6 characters' });
+                  return;
+                }
+                setPasswordLoading(true);
+                try {
+                  await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+                  setPasswordMsg({ type: 'success', text: 'Password changed successfully!' });
+                  setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                } catch (err) {
+                  setPasswordMsg({ type: 'error', text: err.response?.data?.message || err.message || 'Failed to change password' });
+                } finally {
+                  setPasswordLoading(false);
+                }
+              }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: theme.text }}>Current Password</label>
+                  <input type="password" required value={passwordForm.currentPassword}
+                    onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    style={{ width: '100%', padding: '10px 14px', boxSizing: 'border-box', borderRadius: '6px', border: `1px solid ${theme.inputBorder}`, fontSize: '14px', color: theme.text, backgroundColor: theme.inputBg, outline: 'none' }}
+                  />
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: theme.text }}>New Password</label>
+                  <input type="password" required minLength={6} value={passwordForm.newPassword}
+                    onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    style={{ width: '100%', padding: '10px 14px', boxSizing: 'border-box', borderRadius: '6px', border: `1px solid ${theme.inputBorder}`, fontSize: '14px', color: theme.text, backgroundColor: theme.inputBg, outline: 'none' }}
+                  />
+                </div>
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: theme.text }}>Confirm New Password</label>
+                  <input type="password" required minLength={6} value={passwordForm.confirmPassword}
+                    onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    style={{ width: '100%', padding: '10px 14px', boxSizing: 'border-box', borderRadius: '6px', border: `1px solid ${theme.inputBorder}`, fontSize: '14px', color: theme.text, backgroundColor: theme.inputBg, outline: 'none' }}
+                  />
+                </div>
+                <button type="submit" disabled={passwordLoading}
+                  style={{ padding: '12px 24px', backgroundColor: theme.primary, color: 'white', border: 'none', borderRadius: '6px', cursor: passwordLoading ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', width: '100%' }}
+                >
+                  {passwordLoading ? 'Changing...' : 'Change Password'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+
       </div>
     </div>
   );

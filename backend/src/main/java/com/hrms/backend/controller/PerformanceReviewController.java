@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.backend.entity.PerformanceReview;
 import com.hrms.backend.services.PerformanceReviewService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/performance-reviews")
 public class PerformanceReviewController {
@@ -45,14 +47,14 @@ public class PerformanceReviewController {
     }
 
     @PostMapping
-    public ResponseEntity<PerformanceReview> createReview(@RequestBody PerformanceReview review) {
+    public ResponseEntity<PerformanceReview> createReview(@Valid @RequestBody PerformanceReview review) {
         PerformanceReview saved = performanceReviewService.createReview(review);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<PerformanceReview> updateReview(@PathVariable("id") Integer reviewId,
-                                                             @RequestBody PerformanceReview review) {
+                                                             @Valid @RequestBody PerformanceReview review) {
         return ResponseEntity.ok(performanceReviewService.updateReview(reviewId, review));
     }
 

@@ -61,6 +61,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
 
+                // Change password requires authentication but no specific role.
+                .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
+
                 // System user accounts (login credentials) - admin only.
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
 
@@ -75,6 +78,7 @@ public class SecurityConfig {
                 // on their own dashboard); only admin/hr can add, edit, or remove one.
                 .requestMatchers(HttpMethod.GET, "/api/employees/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/employees/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.PUT, "/api/employees/me").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/employees/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyRole("ADMIN", "HR")
 
@@ -93,13 +97,6 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/leave-requests/*/reject").hasAnyRole("ADMIN", "HR", "MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/leave-requests/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers(HttpMethod.DELETE, "/api/leave-requests/**").hasAnyRole("ADMIN", "HR")
-
-                // Payroll - any signed-in user can view their own payslips;
-                // only admin/hr can create, edit, or delete payroll records.
-                .requestMatchers(HttpMethod.GET, "/api/payroll/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.PUT, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.DELETE, "/api/payroll/**").hasAnyRole("ADMIN", "HR")
 
                 // Leave balances - any signed-in user can view (own balance on their
                 // dashboard); only admin/hr can create/adjust/delete allotments.
@@ -164,7 +161,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://127.0.0.1:5173"
+                "http://127.0.0.1:5173",
+                "http://localhost:5174",
+                "http://127.0.0.1:5174"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

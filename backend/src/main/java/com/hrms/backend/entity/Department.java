@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "departments")
@@ -20,6 +22,8 @@ public class Department {
     @Column(name = "department_id")
     private Integer departmentId;
 
+    @NotBlank(message = "Department name is required")
+    @Size(max = 100, message = "Department name must be at most 100 characters")
     @Column(name = "department_name", nullable = false, length = 100)
     private String departmentName;
 

@@ -13,6 +13,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "performance_reviews")
@@ -26,16 +30,22 @@ public class PerformanceReview {
     @ManyToOne
     @JoinColumn(name = "employee_id", nullable = false)
     @JsonIgnoreProperties({ "manager" })
+    @NotNull(message = "Employee is required")
     private Employee employee;
 
     @ManyToOne
     @JoinColumn(name = "reviewer_id", nullable = false)
     @JsonIgnoreProperties({ "manager" })
+    @NotNull(message = "Reviewer is required")
     private Employee reviewer;
 
+    @NotBlank(message = "Review period is required")
     @Column(name = "review_period", length = 50)
     private String reviewPeriod;
 
+    @NotNull(message = "Rating is required")
+    @DecimalMin(value = "1.0", message = "Rating must be at least 1.0")
+    @DecimalMax(value = "5.0", message = "Rating must be at most 5.0")
     @Column(precision = 3, scale = 1)
     private BigDecimal rating;
 

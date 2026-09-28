@@ -1,6 +1,5 @@
 package com.hrms.backend.dto;
 
-import java.math.BigDecimal;
 import java.util.Map;
 
 // Aggregate figures for the admin overview dashboard. Kept as one payload so
@@ -12,7 +11,6 @@ public class AnalyticsSummary {
     private long onLeaveEmployees;
     private Map<String, Long> headcountByDepartment;
     private Map<String, Long> employeesByStatus;
-    private BigDecimal totalNetPayLastPeriod;
     private long pendingLeaveRequests;
     private Map<String, Long> leaveRequestsByStatus;
     private Map<String, Long> leaveRequestsByType;
@@ -33,9 +31,6 @@ public class AnalyticsSummary {
 
     public Map<String, Long> getEmployeesByStatus() { return employeesByStatus; }
     public void setEmployeesByStatus(Map<String, Long> v) { this.employeesByStatus = v; }
-
-    public BigDecimal getTotalNetPayLastPeriod() { return totalNetPayLastPeriod; }
-    public void setTotalNetPayLastPeriod(BigDecimal v) { this.totalNetPayLastPeriod = v; }
 
     public long getPendingLeaveRequests() { return pendingLeaveRequests; }
     public void setPendingLeaveRequests(long v) { this.pendingLeaveRequests = v; }

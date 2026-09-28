@@ -96,7 +96,7 @@ export default function AnalyticsTab() {
 
   if (!summary) return null;
 
-  const money = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 
   return (
     <div>
@@ -119,9 +119,7 @@ export default function AnalyticsTab() {
         <StatCard theme={theme} label="Medium Attrition Risk" value={summary.mediumAttritionRiskCount} accent="#f59e0b" />
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
-        <StatCard theme={theme} label="Total Net Pay — Last Period" value={money(summary.totalNetPayLastPeriod)} accent={theme.primary} />
-      </div>
+
 
       {/* --- Charts --- */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>

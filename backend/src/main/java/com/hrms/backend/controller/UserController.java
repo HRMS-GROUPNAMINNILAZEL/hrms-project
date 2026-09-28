@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.hrms.backend.entity.User;
 import com.hrms.backend.services.UserService;
 
@@ -35,14 +37,14 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
         User saved = userService.createUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable("id") Integer userId,
-                                             @RequestBody User user) {
+                                             @Valid @RequestBody User user) {
         User updated = userService.updateUser(userId, user);
         return ResponseEntity.ok(updated);
     }

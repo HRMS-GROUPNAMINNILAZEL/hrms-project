@@ -38,6 +38,16 @@ public class AttendanceService {
     }
 
     public Attendance createAttendance(Attendance attendance) {
+        // Prevent duplicate clock-in for the same employee on the same date
+        if (attendance.getEmployee() != null && attendance.getDate() != null) {
+            attendanceRepository.findByEmployee_EmployeeIdAndDate(
+                    attendance.getEmployee().getEmployeeId(), attendance.getDate())
+                    .ifPresent(existing -> {
+                        throw new IllegalStateException(
+                                "Attendance record already exists for this employee on " + attendance.getDate()
+                                + ". Use clock-out to update the existing record instead.");
+                    });
+        }
         return attendanceRepository.save(attendance);
     }
 

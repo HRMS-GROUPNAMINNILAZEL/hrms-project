@@ -2,105 +2,169 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { forgotPassword, resetPassword } from '../services/api';
+import { IconSun, IconMoon } from '../components/Icons';
 
-// --- Theme-aware style helpers (mirrors the polished styling from the main branch) ---
+// --- InsightX-inspired style helpers ---
 const getStyles = (theme, isDarkMode) => ({
   wrapper: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: '100vh',
-    backgroundColor: theme.bg,
+    background: isDarkMode
+      ? '#09090b'
+      : 'linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%)',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    position: 'relative'
+    position: 'relative',
+    overflow: 'hidden'
   },
   themeToggle: {
     position: 'absolute',
-    top: '20px',
-    right: '20px',
+    top: '24px',
+    right: '24px',
     padding: '8px 14px',
-    backgroundColor: theme.cardBg,
+    backgroundColor: isDarkMode ? '#18181b' : '#ffffff',
     color: theme.text,
     border: `1px solid ${theme.border}`,
-    borderRadius: '6px',
+    borderRadius: '10px',
     cursor: 'pointer',
     fontSize: '13px',
-    fontWeight: '500'
+    fontWeight: '500',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'all 0.2s ease',
+    zIndex: 10,
   },
   card: {
-    background: theme.cardBg,
+    background: isDarkMode ? '#18181b' : '#ffffff',
     padding: '40px 36px',
-    borderRadius: '12px',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+    borderRadius: '20px',
+    boxShadow: isDarkMode
+      ? '0 0 0 1px rgba(255,255,255,0.06), 0 25px 50px -12px rgba(0, 0, 0, 0.8)'
+      : '0 0 0 1px rgba(0,0,0,0.04), 0 25px 50px -12px rgba(0, 0, 0, 0.12)',
     width: '100%',
-    maxWidth: '360px',
+    maxWidth: '400px',
     color: theme.text,
     boxSizing: 'border-box',
-    border: `1px solid ${theme.border}`
+    border: `1px solid ${theme.border}`,
+    animation: 'fadeSlideUp 0.4s ease-out',
+    position: 'relative',
+    zIndex: 2,
   },
-  label: { display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: theme.text },
+  label: {
+    display: 'block',
+    marginBottom: '8px',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: theme.text,
+    letterSpacing: '0.01em',
+  },
   input: {
     width: '100%',
-    padding: '10px 12px',
+    padding: '11px 14px',
     boxSizing: 'border-box',
-    borderRadius: '6px',
+    borderRadius: '10px',
     border: `1px solid ${theme.inputBorder}`,
     backgroundColor: theme.inputBg,
     color: theme.text,
     fontSize: '14px',
-    outline: 'none'
+    outline: 'none',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
   },
   primaryBtn: {
     width: '100%',
-    padding: '11px',
+    padding: '12px',
     backgroundColor: theme.primary,
     color: theme.primaryText,
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '10px',
     fontWeight: '600',
     fontSize: '14px',
     cursor: 'pointer',
-    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+    transition: 'all 0.2s ease',
+    letterSpacing: '0.01em',
   },
   linkBtn: {
     background: 'none',
     border: 'none',
-    color: theme.primary,
+    color: theme.accent,
     cursor: 'pointer',
     fontSize: '13px',
     padding: 0,
-    marginTop: '14px',
+    marginTop: '16px',
     display: 'block',
     textAlign: 'center',
-    width: '100%'
+    width: '100%',
+    fontWeight: '500',
   },
   errorBox: {
-    backgroundColor: isDarkMode ? '#450a0a' : '#fef2f2',
-    border: `1px solid ${isDarkMode ? '#991b1b' : '#fecaca'}`,
-    color: isDarkMode ? '#fca5a5' : '#dc2626',
+    backgroundColor: theme.dangerBg,
+    border: `1px solid ${theme.dangerBorder}`,
+    color: theme.dangerText,
     padding: '10px 14px',
-    borderRadius: '6px',
+    borderRadius: '10px',
     marginBottom: '20px',
     fontSize: '13px',
     textAlign: 'center'
   },
   successBox: {
-    backgroundColor: isDarkMode ? '#052e16' : '#d4edda',
-    border: `1px solid ${isDarkMode ? '#166534' : '#c3e6cb'}`,
-    color: isDarkMode ? '#86efac' : '#155724',
+    backgroundColor: theme.successBg,
+    border: `1px solid ${theme.successBorder}`,
+    color: theme.successText,
     padding: '10px',
-    borderRadius: '6px',
+    borderRadius: '10px',
     marginBottom: '15px',
     fontSize: '13px',
     textAlign: 'center'
   }
 });
 
-function ThemeToggleButton({ theme, toggleTheme, isDarkMode }) {
+// Background decoration for dark mode
+function DarkBgDecor() {
   return (
-    <button onClick={toggleTheme} style={getStyles(theme, isDarkMode).themeToggle}>
-      {isDarkMode ? '☀ Light' : '🌙 Dark'}
+    <>
+      <div style={{
+        position: 'absolute', top: '-20%', right: '-10%',
+        width: '500px', height: '500px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(132,204,22,0.06) 0%, transparent 70%)',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-15%', left: '-15%',
+        width: '600px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(59,130,246,0.04) 0%, transparent 70%)',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
+    </>
+  );
+}
+
+function ThemeToggleButton({ theme, toggleTheme, isDarkMode }) {
+  const s = getStyles(theme, isDarkMode);
+  return (
+    <button onClick={toggleTheme} style={s.themeToggle}>
+      {isDarkMode ? <><IconSun size={14} /> Light</> : <><IconMoon size={14} /> Dark</>}
     </button>
+  );
+}
+
+// Logo icon
+function LogoIcon({ theme }) {
+  return (
+    <div style={{
+      width: '56px', height: '56px', borderRadius: '16px',
+      background: `linear-gradient(135deg, #84cc16, #65a30d)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      margin: '0 auto 18px',
+      boxShadow: '0 4px 14px rgba(132, 204, 22, 0.3)',
+    }}>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 21h18" /><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+        <path d="M9 8h1" /><path d="M9 12h1" /><path d="M14 8h1" /><path d="M14 12h1" />
+        <path d="M9 16h6" />
+      </svg>
+    </div>
   );
 }
 
@@ -120,9 +184,6 @@ function ForgotPasswordForm({ onTokenIssued, onBack, theme, isDarkMode }) {
     try {
       const res = await forgotPassword(usernameOrEmail);
       setMessage(res.message);
-      // This project has no email service wired up, so the backend hands the
-      // reset token straight back instead of mailing it. In a real deployment
-      // this would arrive as a link in the user's inbox, not on-screen.
       if (res.resetToken) {
         onTokenIssued(res.resetToken);
       }
@@ -135,9 +196,10 @@ function ForgotPasswordForm({ onTokenIssued, onBack, theme, isDarkMode }) {
 
   return (
     <form onSubmit={handleSubmit} style={s.card}>
-      <h2 style={{ margin: '0 0 8px 0', textAlign: 'center', color: theme.text, fontSize: '20px', fontWeight: '700' }}>Forgot Password</h2>
-      <p style={{ fontSize: '13px', color: theme.textMuted, textAlign: 'center', marginTop: 0, marginBottom: '20px' }}>
-        Enter your username or email and we'll generate a reset link.
+      <LogoIcon theme={theme} />
+      <h2 style={{ margin: '0 0 8px 0', textAlign: 'center', color: theme.text, fontSize: '22px', fontWeight: '700', letterSpacing: '-0.5px' }}>Forgot Password</h2>
+      <p style={{ fontSize: '13px', color: theme.textMuted, textAlign: 'center', marginTop: 0, marginBottom: '24px' }}>
+        Enter your username or email to reset.
       </p>
 
       {error && <div style={s.errorBox}>{error}</div>}
@@ -148,7 +210,7 @@ function ForgotPasswordForm({ onTokenIssued, onBack, theme, isDarkMode }) {
         <input type="text" value={usernameOrEmail} onChange={(e) => setUsernameOrEmail(e.target.value)} required style={s.input} />
       </div>
 
-      <button type="submit" disabled={loading} style={s.primaryBtn}>
+      <button type="submit" disabled={loading} style={{ ...s.primaryBtn, opacity: loading ? 0.7 : 1 }}>
         {loading ? 'Please wait...' : 'Send Reset Link'}
       </button>
       <button type="button" onClick={onBack} style={s.linkBtn}>Back to login</button>
@@ -185,29 +247,30 @@ function ResetPasswordForm({ initialToken, onDone, onBack, theme, isDarkMode }) 
 
   return (
     <form onSubmit={handleSubmit} style={s.card}>
-      <h2 style={{ margin: '0 0 8px 0', textAlign: 'center', color: theme.text, fontSize: '20px', fontWeight: '700' }}>Reset Password</h2>
-      <p style={{ fontSize: '13px', color: theme.textMuted, textAlign: 'center', marginTop: 0, marginBottom: '20px' }}>
+      <LogoIcon theme={theme} />
+      <h2 style={{ margin: '0 0 8px 0', textAlign: 'center', color: theme.text, fontSize: '22px', fontWeight: '700', letterSpacing: '-0.5px' }}>Reset Password</h2>
+      <p style={{ fontSize: '13px', color: theme.textMuted, textAlign: 'center', marginTop: 0, marginBottom: '24px' }}>
         {initialToken ? 'A reset link was generated below.' : 'Paste the token from your reset link.'}
       </p>
 
       {error && <div style={s.errorBox}>{error}</div>}
 
-      <div style={{ marginBottom: '15px' }}>
+      <div style={{ marginBottom: '16px' }}>
         <label style={s.label}>Reset Token</label>
         <input type="text" value={token} onChange={(e) => setToken(e.target.value)} required style={{ ...s.input, fontSize: '11px', wordBreak: 'break-all' }} />
       </div>
 
-      <div style={{ marginBottom: '15px' }}>
+      <div style={{ marginBottom: '16px' }}>
         <label style={s.label}>New Password</label>
         <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} style={s.input} />
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '24px' }}>
         <label style={s.label}>Confirm New Password</label>
         <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} style={s.input} />
       </div>
 
-      <button type="submit" disabled={loading} style={s.primaryBtn}>
+      <button type="submit" disabled={loading} style={{ ...s.primaryBtn, opacity: loading ? 0.7 : 1 }}>
         {loading ? 'Saving...' : 'Reset Password'}
       </button>
       <button type="button" onClick={onBack} style={s.linkBtn}>Back to login</button>
@@ -245,6 +308,7 @@ export default function LoginPage() {
   if (mode === 'forgot') {
     return (
       <div style={s.wrapper}>
+        {isDarkMode && <DarkBgDecor />}
         <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
         <ForgotPasswordForm
           theme={theme}
@@ -259,6 +323,7 @@ export default function LoginPage() {
   if (mode === 'reset') {
     return (
       <div style={s.wrapper}>
+        {isDarkMode && <DarkBgDecor />}
         <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
         <ResetPasswordForm
           theme={theme}
@@ -273,11 +338,16 @@ export default function LoginPage() {
 
   return (
     <div style={s.wrapper}>
+      {isDarkMode && <DarkBgDecor />}
+      <style>{`
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
       <ThemeToggleButton theme={theme} toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
       <form onSubmit={handleSubmit} style={s.card}>
-        <div style={{ marginBottom: '28px', textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', letterSpacing: '-0.5px', color: theme.text }}>Welcome</h2>
-          <p style={{ margin: 0, fontSize: '14px', color: theme.textMuted }}>Please sign in with your corporate credentials</p>
+        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+          <LogoIcon theme={theme} />
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', letterSpacing: '-0.5px', color: theme.text }}>HRMS Portal</h2>
+          <p style={{ margin: 0, fontSize: '14px', color: theme.textMuted }}>Sign in to your account</p>
         </div>
 
         {mode === 'reset-done' && (
@@ -299,7 +369,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '28px' }}>
           <label style={s.label}>Password</label>
           <input
             type="password"
@@ -314,7 +384,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          style={{ ...s.primaryBtn, backgroundColor: loading ? theme.primaryHover : theme.primary, cursor: loading ? 'not-allowed' : 'pointer' }}
+          style={{ ...s.primaryBtn, opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
         >
           {loading ? 'Signing in...' : 'Sign in'}
         </button>

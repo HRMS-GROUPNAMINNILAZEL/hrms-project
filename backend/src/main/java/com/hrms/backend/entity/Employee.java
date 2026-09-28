@@ -16,6 +16,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "employees")
@@ -30,9 +33,13 @@ public class Employee {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @NotBlank(message = "First name is required")
+    @Size(max = 50, message = "First name must be at most 50 characters")
     @Column(name = "first_name", nullable = false, length = 50)
     private String firstName;
 
+    @NotBlank(message = "Last name is required")
+    @Size(max = 50, message = "Last name must be at most 50 characters")
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
@@ -52,6 +59,7 @@ public class Employee {
     @JsonIgnoreProperties({ "department", "manager" })
     private Employee manager;
 
+    @NotNull(message = "Hire date is required")
     @Column(name = "hire_date", nullable = false)
     private LocalDate hireDate;
 
@@ -64,6 +72,9 @@ public class Employee {
 
     @Column(length = 255)
     private String address;
+
+    @Column(name = "profile_photo", columnDefinition = "LONGTEXT")
+    private String profilePhoto;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -104,6 +115,9 @@ public class Employee {
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+
+    public String getProfilePhoto() { return profilePhoto; }
+    public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
