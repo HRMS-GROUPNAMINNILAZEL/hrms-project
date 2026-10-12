@@ -56,10 +56,16 @@ public class EmployeeController {
     public ResponseEntity<Employee> updateMyProfile(@AuthenticationPrincipal AuthenticatedUser principal,
                                                      @RequestBody Employee updates) {
         Employee existing = employeeService.getEmployeeByUserId(principal.userId());
-        // Only allow safe self-edits
-        existing.setContactNumber(updates.getContactNumber());
-        existing.setAddress(updates.getAddress());
-        existing.setProfilePhoto(updates.getProfilePhoto());
+        // Only allow safe self-edits, updating fields if provided
+        if (updates.getContactNumber() != null) {
+            existing.setContactNumber(updates.getContactNumber());
+        }
+        if (updates.getAddress() != null) {
+            existing.setAddress(updates.getAddress());
+        }
+        if (updates.getProfilePhoto() != null) {
+            existing.setProfilePhoto(updates.getProfilePhoto());
+        }
         Employee updated = employeeService.updateEmployee(existing.getEmployeeId(), existing);
         return ResponseEntity.ok(updated);
     }

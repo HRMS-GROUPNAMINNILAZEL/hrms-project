@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hrms.backend.entity.Attendance;
+import com.hrms.backend.security.AuthenticatedUser;
 import com.hrms.backend.services.AttendanceService;
 
 import jakarta.validation.Valid;
@@ -54,15 +56,17 @@ public class AttendanceController {
     }
 
     @PostMapping
-    public ResponseEntity<Attendance> createAttendance(@Valid @RequestBody Attendance attendance) {
-        Attendance saved = attendanceService.createAttendance(attendance);
+    public ResponseEntity<Attendance> createAttendance(@Valid @RequestBody Attendance attendance,
+                                                       @AuthenticationPrincipal AuthenticatedUser principal) {
+        Attendance saved = attendanceService.createAttendance(attendance, principal);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Attendance> updateAttendance(@PathVariable("id") Integer attendanceId,
-                                                          @Valid @RequestBody Attendance attendance) {
-        Attendance updated = attendanceService.updateAttendance(attendanceId, attendance);
+                                                       @RequestBody Attendance attendance,
+                                                       @AuthenticationPrincipal AuthenticatedUser principal) {
+        Attendance updated = attendanceService.updateAttendance(attendanceId, attendance, principal);
         return ResponseEntity.ok(updated);
     }
 

@@ -6,11 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.hrms.backend.entity.Employee;
 import com.hrms.backend.entity.LeaveRequest;
 import com.hrms.backend.entity.User;
 import com.hrms.backend.exception.ResourceNotFoundException;
+import com.hrms.backend.repository.EmployeeRepository;
 import com.hrms.backend.repository.LeaveRequestRepository;
 import com.hrms.backend.repository.UserRepository;
+import com.hrms.backend.security.AuthenticatedUser;
 
 @Service
 public class LeaveRequestService {
@@ -20,6 +23,9 @@ public class LeaveRequestService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
     @Autowired
     private LeaveBalanceService leaveBalanceService;
@@ -42,6 +48,15 @@ public class LeaveRequestService {
 
     public List<LeaveRequest> getLeaveRequestsByStatus(LeaveRequest.Status status) {
         return leaveRequestRepository.findByStatus(status);
+    }
+
+    public LeaveRequest createLeaveRequest(LeaveRequest leaveRequest, AuthenticatedUser principal) {
+        if (principal != null && "EMPLOYEE".equalsIgnoreCase(principal.role())) {
+            Employee emp = employeeRepository.findByUser_UserId(principal.userId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee record not found for user: " + principal.userId()));
+            leaveRequest.setEmployee(emp);
+        }
+        return createLeaveRequest(leaveRequest);
     }
 
     public LeaveRequest createLeaveRequest(LeaveRequest leaveRequest) {
@@ -117,6 +132,10 @@ public class LeaveRequestService {
     }
 
     public LeaveRequest rejectLeaveRequest(Integer leaveId, Integer approverId) {
+        return rejectLeaveRequest(leaveId, approverId, null);
+    }
+
+    public LeaveRequest rejectLeaveRequest(Integer leaveId, Integer approverId, String reason) {
         User approver = requireApprover(approverId);
         LeaveRequest existing = getLeaveRequestById(leaveId);
 
@@ -133,16 +152,36 @@ public class LeaveRequestService {
 
         // Notify the employee
         if (existing.getEmployee().getUser() != null) {
+            String message = "Your " + existing.getLeaveType() + " leave request ("
+                    + existing.getStartDate() + " to " + existing.getEndDate() + ") has been rejected.";
+            if (reason != null && !reason.isBlank()) {
+                message += " Reason: " + reason.trim();
+            }
             notificationService.create(
                 existing.getEmployee().getUser().getUserId(),
-                "Your " + existing.getLeaveType() + " leave request (" + existing.getStartDate() + " to " + existing.getEndDate() + ") has been rejected.",
+                message,
                 "leave_rejected");
         }
         return saved;
     }
 
-    public void deleteLeaveRequest(Integer leaveId) {
+    public void deleteLeaveRequest(Integer leaveId, AuthenticatedUser principal) {
         LeaveRequest existing = getLeaveRequestById(leaveId);
+
+        if (principal != null) {
+            String role = principal.role();
+            boolean isAdminOrHr = "ADMIN".equalsIgnoreCase(role) || "HR".equalsIgnoreCase(role);
+            if (!isAdminOrHr) {
+                // Regular employees can only cancel their own pending leave requests
+                if (existing.getEmployee() == null || existing.getEmployee().getUser() == null
+                        || !existing.getEmployee().getUser().getUserId().equals(principal.userId())) {
+                    throw new AccessDeniedException("You can only cancel your own leave requests.");
+                }
+                if (existing.getStatus() != LeaveRequest.Status.pending) {
+                    throw new IllegalStateException("You can only cancel pending leave requests. Current status: " + existing.getStatus());
+                }
+            }
+        }
 
         // Deleting an already-approved request (e.g. HR cleaning up a mistaken
         // entry) should hand the days back rather than leaving them consumed.
@@ -152,5 +191,9 @@ public class LeaveRequestService {
         }
 
         leaveRequestRepository.delete(existing);
+    }
+
+    public void deleteLeaveRequest(Integer leaveId) {
+        deleteLeaveRequest(leaveId, null);
     }
 }

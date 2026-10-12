@@ -70,7 +70,11 @@ export const getLeaveRequests = (params) => api.get('/leave-requests', { params 
 export const createLeaveRequest = (data) => api.post('/leave-requests', data).then(res => res.data);
 export const updateLeaveRequest = (id, data) => api.put(`/leave-requests/${id}`, data).then(res => res.data);
 export const approveLeaveRequest = (id, approverId) => api.patch(`/leave-requests/${id}/approve`, { approverId }).then(res => res.data);
-export const rejectLeaveRequest = (id, approverId) => api.patch(`/leave-requests/${id}/reject`, { approverId }).then(res => res.data);
+export const rejectLeaveRequest = (id, approverId, reason) => {
+  const payload = { approverId };
+  if (reason) payload.reason = reason;
+  return api.patch(`/leave-requests/${id}/reject`, payload).then(res => res.data);
+};
 export const deleteLeaveRequest = (id) => api.delete(`/leave-requests/${id}`).then(res => res.data);
 
 // --- Password Endpoints ---

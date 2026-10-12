@@ -22,11 +22,18 @@ public class NotificationService {
         return repo.countByUserIdAndIsReadFalse(userId);
     }
 
-    public void markAsRead(Integer notificationId) {
+    public void markAsRead(Integer notificationId, Integer userId) {
         repo.findById(notificationId).ifPresent(n -> {
+            if (userId != null && !n.getUserId().equals(userId)) {
+                return;
+            }
             n.setIsRead(true);
             repo.save(n);
         });
+    }
+
+    public void markAsRead(Integer notificationId) {
+        markAsRead(notificationId, null);
     }
 
     public void markAllRead(Integer userId) {
@@ -38,6 +45,9 @@ public class NotificationService {
     public Notification create(Integer userId, String message, String type) {
         Notification n = new Notification();
         n.setUserId(userId);
+        if (message != null && message.length() > 500) {
+            message = message.substring(0, 497) + "...";
+        }
         n.setMessage(message);
         n.setType(type);
         return repo.save(n);

@@ -31,8 +31,9 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable("id") Integer id) {
-        notificationService.markAsRead(id);
+    public ResponseEntity<Void> markAsRead(@PathVariable("id") Integer id,
+                                           @AuthenticationPrincipal AuthenticatedUser principal) {
+        notificationService.markAsRead(id, principal != null ? principal.userId() : null);
         return ResponseEntity.ok().build();
     }
 

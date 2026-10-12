@@ -158,6 +158,46 @@ code,
   color: var(--text-h);
 }
 
+
+@media print {
+  /* Hide navigation sidebar, action buttons, notifications, and interactive chrome during print */
+  .dashboard-sidebar,
+  .dashboard-header button,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  body,
+  .dashboard-shell,
+  .dashboard-main {
+    background: #ffffff !important;
+    color: #111827 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #d1d5db !important;
+    padding: 8px 10px !important;
+    color: #111827 !important;
+    background: transparent !important;
+  }
+
+  @page {
+    margin: 1.5cm;
+    size: auto;
+  }
+}
+
 code {
   font-size: 15px;
   line-height: 135%;

@@ -109,6 +109,9 @@ public class LeaveBalanceService {
      * capped by an allotment.
      */
     public void assertSufficientBalance(Integer employeeId, LeaveRequest.LeaveType leaveType, LocalDate start, LocalDate end) {
+        if (start != null && end != null && end.isBefore(start)) {
+            throw new IllegalStateException("End date cannot be earlier than start date.");
+        }
         if (leaveType == LeaveRequest.LeaveType.unpaid) {
             return;
         }

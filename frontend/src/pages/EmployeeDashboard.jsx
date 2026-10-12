@@ -15,15 +15,31 @@ import {
   getNotifications,
   getUnreadCount,
   markNotificationRead,
-  markAllNotificationsRead
+  markAllNotificationsRead,
+  getLeaveBalances
 } from '../services/api';
 import MyLeaveBalances from './employee/MyLeaveBalances';
 import MyPerformanceReviews from './employee/MyPerformanceReviews';
 import MySkills from './employee/MySkills';
 import { IconDashboard, IconProfile, IconLeave, IconAttendance, IconPerformance, IconSkills, IconPassword, IconLogout, IconSun, IconMoon, IconBell, IconCamera } from '../components/Icons';
 
-const todayStr = () => new Date().toISOString().split('T')[0];
+const todayStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 const nowTimeStr = () => new Date().toTimeString().split(' ')[0]; // "HH:MM:SS"
+
+const getInclusiveDays = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return 0;
+  const diffTime = end.getTime() - start.getTime();
+  return Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+};
 
 export default function EmployeeDashboard() {
   const { user, logout } = useAuth();
@@ -49,8 +65,11 @@ export default function EmployeeDashboard() {
     reason: ''
   });
 
-  // Clock in/out state
+  const [leaveBalances, setLeaveBalances] = useState([]);
+  const [leaveBalancesKey, setLeaveBalancesKey] = useState(0);
   const [clockLoading, setClockLoading] = useState(false);
+  const [submittingLeave, setSubmittingLeave] = useState(false);
+  const [messageDialog, setMessageDialog] = useState(null);
 
   // Profile edit state
   const [editingProfile, setEditingProfile] = useState(false);
@@ -123,6 +142,13 @@ export default function EmployeeDashboard() {
       const att = await getAttendance({ employeeId: empId });
       setAttendance(att);
 
+      try {
+        const bal = await getLeaveBalances({ employeeId: empId, year: new Date().getFullYear() });
+        setLeaveBalances(bal || []);
+      } catch (e) {
+        console.warn('Failed to prefetch leave balances:', e);
+      }
+
 
 
     } catch (err) {
@@ -142,6 +168,13 @@ export default function EmployeeDashboard() {
     if (!employeeProfile) return;
     const leaves = await getLeaveRequests({ employeeId: employeeProfile.employeeId });
     setLeaveRequests(leaves);
+    try {
+      const bal = await getLeaveBalances({ employeeId: employeeProfile.employeeId, year: new Date().getFullYear() });
+      setLeaveBalances(bal || []);
+    } catch (e) {
+      console.warn('Failed to refresh leave balances:', e);
+    }
+    setLeaveBalancesKey(prev => prev + 1);
   };
 
   const handleLeaveInputChange = (e) => {
@@ -162,13 +195,32 @@ export default function EmployeeDashboard() {
       reason: leaveForm.reason
     };
 
+    setSubmittingLeave(true);
     try {
       await createLeaveRequest(payload);
       setShowLeaveModal(false);
       setLeaveForm({ leaveType: 'vacation', startDate: '', endDate: '', reason: '' });
       await refreshLeaveRequests();
+      setMessageDialog({
+        type: 'success',
+        title: 'Leave Request Submitted',
+        message: 'Your leave request has been submitted successfully and is pending approval.'
+      });
     } catch (err) {
-      setActionError(err.response?.data?.message || err.message || 'Failed to submit leave request');
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to submit leave request';
+      setShowLeaveModal(false);
+      setActionError(errorMsg);
+      const isLimit = errorMsg.toLowerCase().includes('remain') ||
+                      errorMsg.toLowerCase().includes('limit') ||
+                      errorMsg.toLowerCase().includes('balance') ||
+                      errorMsg.toLowerCase().includes('exceed');
+      setMessageDialog({
+        type: 'error',
+        title: isLimit ? 'Leave Limit Reached' : 'Unable to Submit Leave',
+        message: errorMsg
+      });
+    } finally {
+      setSubmittingLeave(false);
     }
   };
 
@@ -177,8 +229,19 @@ export default function EmployeeDashboard() {
     try {
       await deleteLeaveRequest(leaveId);
       await refreshLeaveRequests();
+      setMessageDialog({
+        type: 'success',
+        title: 'Leave Cancelled',
+        message: 'Your leave request has been cancelled successfully.'
+      });
     } catch (err) {
-      setActionError(err.response?.data?.message || err.message || 'Failed to cancel leave request');
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to cancel leave request';
+      setActionError(errorMsg);
+      setMessageDialog({
+        type: 'error',
+        title: 'Cancellation Failed',
+        message: errorMsg
+      });
     }
   };
 
@@ -235,23 +298,13 @@ export default function EmployeeDashboard() {
     setActionError('');
     setSavingProfile(true);
 
-    // The backend PUT overwrites every field on the employee, so the full
-    // current profile has to be sent back along with the two editable fields.
     const payload = {
-      user: { userId: employeeProfile.user.userId },
-      firstName: employeeProfile.firstName,
-      lastName: employeeProfile.lastName,
-      department: employeeProfile.department ? { departmentId: employeeProfile.department.departmentId } : null,
-      manager: employeeProfile.manager ? { employeeId: employeeProfile.manager.employeeId } : null,
-      position: employeeProfile.position,
-      hireDate: employeeProfile.hireDate,
-      status: employeeProfile.status,
       contactNumber: profileForm.contactNumber,
       address: profileForm.address
     };
 
     try {
-      const updated = await updateEmployee(employeeProfile.employeeId, payload);
+      const updated = await updateMyProfile(payload);
       setEmployeeProfile(updated);
       setEditingProfile(false);
     } catch (err) {
@@ -279,6 +332,25 @@ export default function EmployeeDashboard() {
       </li>
     );
   };
+
+  const currentLeaveYear = leaveForm.startDate ? new Date(leaveForm.startDate).getFullYear() : new Date().getFullYear();
+  const selectedBalance = leaveBalances.find(b => 
+    b.leaveType?.toLowerCase() === leaveForm.leaveType?.toLowerCase() &&
+    (!b.year || b.year === currentLeaveYear)
+  );
+
+  const calculateDays = () => {
+    if (!leaveForm.startDate || !leaveForm.endDate) return null;
+    const start = new Date(leaveForm.startDate);
+    const end = new Date(leaveForm.endDate);
+    if (end < start) return -1;
+    return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  };
+  const modalDaysCount = calculateDays();
+  const isOverBalance = modalDaysCount && modalDaysCount > 0 && 
+    leaveForm.leaveType !== 'unpaid' && 
+    selectedBalance && 
+    modalDaysCount > (selectedBalance.remainingDays ?? 0);
 
   return (
     <div className="dashboard-shell" style={{ backgroundColor: theme.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: theme.text }}>
@@ -359,7 +431,7 @@ export default function EmployeeDashboard() {
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {activeTab === 'leaves' && (
               <button 
-                onClick={() => setShowLeaveModal(true)} 
+                onClick={() => { setActionError(''); setShowLeaveModal(true); }} 
                 style={{ padding: '9px 16px', cursor: 'pointer', backgroundColor: theme.primary, color: theme.primaryText, border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}
               >
                 + Request Leave
@@ -387,8 +459,30 @@ export default function EmployeeDashboard() {
                     <div style={{ padding: '32px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>No notifications yet</div>
                   ) : notifications.slice(0, 20).map(n => (
                     <div key={n.notificationId} onClick={async () => { if (!n.isRead) { await markNotificationRead(n.notificationId); loadNotifications(); } }} style={{ padding: '12px 16px', borderBottom: `1px solid ${theme.border}`, cursor: 'pointer', backgroundColor: n.isRead ? 'transparent' : theme.accentBg, fontSize: '13px', transition: 'background-color 0.15s ease' }}>
-                      <div style={{ color: theme.text }}>{n.type === 'leave_approved' ? '✓' : n.type === 'leave_rejected' ? '✕' : '●'} {n.message}</div>
-                      <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '4px' }}>{new Date(n.createdAt).toLocaleString()}</div>
+                      {n.type === 'leave_rejected' ? (
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: theme.text }}>
+                            <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '14px' }}>✕</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '500' }}>
+                                {n.message.includes(' Reason: ') ? n.message.substring(0, n.message.indexOf(' Reason: ')) : n.message}
+                              </div>
+                              {n.message.includes(' Reason: ') && (
+                                <div style={{ marginTop: '6px', padding: '6px 10px', backgroundColor: isDarkMode ? '#450a0a' : '#fef2f2', borderRadius: '6px', borderLeft: '3px solid #ef4444', fontSize: '12px', color: isDarkMode ? '#fca5a5' : '#991b1b' }}>
+                                  <span style={{ fontWeight: '600' }}>Reason: </span>
+                                  {n.message.substring(n.message.indexOf(' Reason: ') + 9)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '4px', paddingLeft: '22px' }}>{new Date(n.createdAt).toLocaleString()}</div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ color: theme.text }}>{n.type === 'leave_approved' ? '✓' : '●'} {n.message}</div>
+                          <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '4px' }}>{new Date(n.createdAt).toLocaleString()}</div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -410,11 +504,11 @@ export default function EmployeeDashboard() {
         {showLeaveModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
             <div style={{ backgroundColor: theme.cardBg, color: theme.text, padding: '32px', borderRadius: '16px', width: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-              <h3>Submit Leave Request</h3>
+              <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', fontWeight: '600' }}>Submit Leave Request</h3>
               <form onSubmit={handleSubmitLeave}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Leave Type</label>
-                  <select name="leaveType" value={leaveForm.leaveType} onChange={handleLeaveInputChange} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text }}>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: '500' }}>Leave Type</label>
+                  <select name="leaveType" value={leaveForm.leaveType} onChange={handleLeaveInputChange} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text, outline: 'none' }}>
                     <option value="vacation">Vacation</option>
                     <option value="sick">Sick</option>
                     <option value="emergency">Emergency</option>
@@ -422,35 +516,140 @@ export default function EmployeeDashboard() {
                     <option value="paternity">Paternity</option>
                     <option value="unpaid">Unpaid</option>
                   </select>
+                  {selectedBalance && leaveForm.leaveType !== 'unpaid' && (
+                    <div style={{ fontSize: '12px', marginTop: '6px', color: theme.textMuted, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Remaining ({currentLeaveYear}):</span>
+                      <strong style={{ color: (selectedBalance.remainingDays ?? 0) > 0 ? theme.primary : theme.dangerText }}>
+                        {selectedBalance.remainingDays ?? 0} day(s)
+                      </strong>
+                    </div>
+                  )}
+                  {leaveForm.leaveType === 'unpaid' && (
+                    <div style={{ fontSize: '12px', marginTop: '6px', color: theme.textMuted }}>
+                      Unpaid leave is exempt from allotment limits.
+                    </div>
+                  )}
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Start Date</label>
-                  <input type="date" name="startDate" value={leaveForm.startDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text }} />
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: '500' }}>Start Date</label>
+                  <input type="date" name="startDate" value={leaveForm.startDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '10px 12px', boxSizing: 'border-box', borderRadius: '8px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text, outline: 'none' }} />
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>End Date</label>
-                  <input type="date" name="endDate" value={leaveForm.endDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text }} />
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: '500' }}>End Date</label>
+                  <input type="date" name="endDate" value={leaveForm.endDate} onChange={handleLeaveInputChange} required style={{ width: '100%', padding: '10px 12px', boxSizing: 'border-box', borderRadius: '8px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text, outline: 'none' }} />
+                  {modalDaysCount !== null && (
+                    <div style={{ fontSize: '12px', marginTop: '6px' }}>
+                      {modalDaysCount === -1 ? (
+                        <span style={{ color: theme.dangerText }}>⚠️ End date cannot be earlier than start date</span>
+                      ) : (
+                        <span style={{ color: theme.textMuted }}>Duration: <strong style={{ color: theme.text }}>{modalDaysCount} day(s)</strong></span>
+                      )}
+                    </div>
+                  )}
+                  {isOverBalance && (
+                    <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', backgroundColor: theme.dangerBg, color: theme.dangerText, border: `1px solid ${theme.dangerBorder}`, fontSize: '12px', lineHeight: '1.4' }}>
+                      ⚠️ Limit warning: This request needs {modalDaysCount} day(s), but only {selectedBalance.remainingDays ?? 0} remain for {currentLeaveYear}.
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>Reason</label>
-                  <textarea name="reason" value={leaveForm.reason} onChange={handleLeaveInputChange} rows="3" placeholder="Brief explanation..." style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text }} />
+                  <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: '500' }}>Reason</label>
+                  <textarea name="reason" value={leaveForm.reason} onChange={handleLeaveInputChange} rows="3" placeholder="Brief explanation..." style={{ width: '100%', padding: '10px 12px', boxSizing: 'border-box', borderRadius: '8px', border: `1px solid ${theme.inputBorder}`, backgroundColor: theme.inputBg, color: theme.text, outline: 'none' }} />
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                  <button type="button" onClick={() => setShowLeaveModal(false)} style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                  <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Submit</button>
+                  <button type="button" onClick={() => setShowLeaveModal(false)} style={{ padding: '9px 18px', backgroundColor: 'transparent', color: theme.text, border: `1px solid ${theme.border}`, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>Cancel</button>
+                  <button type="submit" disabled={submittingLeave || modalDaysCount === -1} style={{ padding: '9px 20px', backgroundColor: submittingLeave ? '#6c757d' : theme.primary, color: theme.primaryText, border: 'none', borderRadius: '8px', cursor: (submittingLeave || modalDaysCount === -1) ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}>
+                    {submittingLeave ? 'Submitting...' : 'Submit'}
+                  </button>
                 </div>
               </form>
             </div>
           </div>
         )}
+        {/* Message Dialog (Popup alert dialog for limit reached, errors, or success) */}
+        {messageDialog && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.65)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 2000
+            }}
+            onClick={() => setMessageDialog(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: theme.cardBg,
+                color: theme.text,
+                padding: '32px',
+                borderRadius: '16px',
+                width: '420px',
+                maxWidth: '90vw',
+                border: `1px solid ${messageDialog.type === 'error' ? theme.dangerBorder : theme.border}`,
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                textAlign: 'center'
+              }}
+            >
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  backgroundColor: messageDialog.type === 'error' ? theme.dangerBg : theme.accentBg,
+                  color: messageDialog.type === 'error' ? theme.dangerText : theme.primary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  fontSize: '26px'
+                }}
+              >
+                {messageDialog.type === 'error' ? '⚠️' : '✓'}
+              </div>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '600' }}>
+                {messageDialog.title}
+              </h3>
+              <p style={{ margin: '0 0 24px 0', color: theme.textMuted, fontSize: '14px', lineHeight: '1.5' }}>
+                {messageDialog.message}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setMessageDialog(null)}
+                  style={{
+                    padding: '10px 32px',
+                    backgroundColor: theme.primary,
+                    color: theme.primaryText,
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '14px'
+                  }}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Tab Views */}
         {activeTab === 'leaves' && employeeProfile && (
-          <MyLeaveBalances employeeId={employeeProfile.employeeId} />
+          <MyLeaveBalances key={leaveBalancesKey} employeeId={employeeProfile.employeeId} />
         )}
 
         {activeTab === 'myPerformance' && employeeProfile && (

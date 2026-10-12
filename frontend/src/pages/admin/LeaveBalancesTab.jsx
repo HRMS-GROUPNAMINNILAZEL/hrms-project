@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { getEmployees, getLeaveBalances, updateLeaveBalance } from '../../services/api';
+import { getEmployees, getLeaveBalances, updateLeaveBalance, exportToCsv } from '../../services/api';
+import { IconDownload } from '../../components/Icons';
 
 const btn = (bg) => ({ padding: '8px 16px', backgroundColor: bg, color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' });
 const smallBtn = (bg) => ({ padding: '4px 8px', backgroundColor: bg, color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', marginRight: '6px' });
@@ -102,6 +103,26 @@ export default function LeaveBalancesTab() {
           <label style={label}>Year</label>
           <input type="number" style={input} value={year} onChange={(e) => setYear(Number(e.target.value))} />
         </div>
+        {selectedEmployeeId && balances.length > 0 && (
+          <button
+            onClick={() => {
+              const currentEmp = employees.find(e => String(e.employeeId) === String(selectedEmployeeId));
+              const empName = currentEmp ? `${currentEmp.firstName}_${currentEmp.lastName}` : 'employee';
+              const rows = balances.map(b => ({
+                Employee: currentEmp ? `${currentEmp.firstName} ${currentEmp.lastName}` : '',
+                Year: b.year,
+                'Leave Type': b.leaveType,
+                'Total Days': b.totalDays,
+                'Used Days': b.usedDays,
+                Remaining: b.totalDays - b.usedDays,
+              }));
+              exportToCsv(`leave_balances_${empName}_${year}.csv`, rows);
+            }}
+            style={{ ...btn(theme.cardBg), color: theme.text, border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '6px', height: '38px', boxSizing: 'border-box' }}
+          >
+            <IconDownload size={14} /> Export CSV
+          </button>
+        )}
       </div>
 
       {error && <div style={{ color: 'red', marginBottom: '15px', backgroundColor: '#f8d7da', padding: '10px', borderRadius: '4px' }}>{error}</div>}

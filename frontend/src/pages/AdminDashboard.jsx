@@ -416,21 +416,42 @@ export default function AdminDashboard() {
   // =========================================================================
   // Leave Requests: Approve / Reject / Delete
   // =========================================================================
+  const [rejectingLeave, setRejectingLeave] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectSaving, setRejectSaving] = useState(false);
+
+  const handleOpenRejectModal = (req) => {
+    setRejectingLeave(req);
+    setRejectionReason('');
+  };
+
+  const handleCloseRejectModal = () => {
+    setRejectingLeave(null);
+    setRejectionReason('');
+  };
+
+  const handleConfirmReject = async (e) => {
+    if (e) e.preventDefault();
+    if (!rejectingLeave) return;
+    setRejectSaving(true);
+    setError('');
+    try {
+      await rejectLeaveRequest(rejectingLeave.leaveId, user.userId, rejectionReason.trim());
+      handleCloseRejectModal();
+      loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to reject leave request');
+    } finally {
+      setRejectSaving(false);
+    }
+  };
+
   const handleApprove = async (id) => {
     try {
       await approveLeaveRequest(id, user.userId);
       loadData();
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to approve leave request');
-    }
-  };
-
-  const handleReject = async (id) => {
-    try {
-      await rejectLeaveRequest(id, user.userId);
-      loadData();
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to reject leave request');
     }
   };
 
@@ -558,6 +579,20 @@ export default function AdminDashboard() {
             )}
             {activeTab === 'departments' && (
               <button onClick={openAddDept} style={{ ...btn(theme.primary), color: theme.primaryText, display: 'flex', alignItems: 'center', gap: '6px' }}><IconPlus size={14} /> Add Department</button>
+            )}
+            {activeTab === 'leaveRequests' && (
+              <button onClick={() => {
+                const rows = leaveRequests.map(r => ({
+                  ID: r.leaveId,
+                  Employee: r.employee ? `${r.employee.firstName} ${r.employee.lastName}` : '',
+                  Type: r.leaveType,
+                  'Start Date': r.startDate,
+                  'End Date': r.endDate,
+                  Reason: r.reason || '',
+                  Status: r.status,
+                }));
+                exportToCsv('leave_requests.csv', rows);
+              }} style={{ ...btn(theme.cardBg), color: theme.text, border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '6px' }}><IconDownload size={14} /> Export CSV</button>
             )}
 
             <button onClick={loadData} style={{ ...btn(theme.cardBg), color: theme.text, border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '6px' }}><IconRefresh size={14} /> Refresh</button>
@@ -834,6 +869,78 @@ export default function AdminDashboard() {
 
 
 
+        {/* Reject Leave Request Modal */}
+        {rejectingLeave && (
+          <div style={modalOverlay} onClick={handleCloseRejectModal}>
+            <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: theme.text }}>Reject Leave Request</h3>
+                <button
+                  type="button"
+                  onClick={handleCloseRejectModal}
+                  style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: theme.textMuted }}
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div style={{ padding: '12px 14px', backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc', borderRadius: '10px', border: `1px solid ${theme.border}`, marginBottom: '16px', fontSize: '13px' }}>
+                <div style={{ marginBottom: '4px' }}>
+                  <span style={{ color: theme.textMuted }}>Employee: </span>
+                  <strong style={{ color: theme.text }}>{rejectingLeave.employee ? `${rejectingLeave.employee.firstName} ${rejectingLeave.employee.lastName}` : `ID #${rejectingLeave.employeeId}`}</strong>
+                </div>
+                <div style={{ marginBottom: '4px' }}>
+                  <span style={{ color: theme.textMuted }}>Leave Type: </span>
+                  <strong style={{ color: theme.text, textTransform: 'capitalize' }}>{rejectingLeave.leaveType}</strong>
+                </div>
+                <div style={{ marginBottom: '4px' }}>
+                  <span style={{ color: theme.textMuted }}>Duration: </span>
+                  <span style={{ color: theme.text }}>{rejectingLeave.startDate} to {rejectingLeave.endDate}</span>
+                </div>
+                {rejectingLeave.reason && (
+                  <div>
+                    <span style={{ color: theme.textMuted }}>Employee's Note: </span>
+                    <span style={{ color: theme.text, fontStyle: 'italic' }}>"{rejectingLeave.reason}"</span>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleConfirmReject}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={label}>
+                    Message / Reason for Rejection <span style={{ fontSize: '12px', fontWeight: 'normal', color: theme.textMuted }}>(will be sent to employee notification)</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Enter reason or instructions for the employee (e.g. Schedule conflict, insufficient staffing, please reschedule)..."
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    style={{ ...input, resize: 'vertical', fontFamily: 'inherit', minHeight: '80px' }}
+                    autoFocus
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={handleCloseRejectModal}
+                    disabled={rejectSaving}
+                    style={btn('#6c757d')}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={rejectSaving}
+                    style={btn('#dc3545')}
+                  >
+                    {rejectSaving ? 'Rejecting...' : 'Reject Request'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         {loading ? (
           <p>Loading data from MySQL / Spring Boot...</p>
         ) : (
@@ -1037,7 +1144,7 @@ export default function AdminDashboard() {
                             (user.role === 'admin' || user.role === 'hr' || user.role === 'manager') ? (
                               <div style={{ display: 'flex', gap: '6px' }}>
                                 <button onClick={() => handleApprove(req.leaveId)} style={smallBtn('#28a745')}>Approve</button>
-                                <button onClick={() => handleReject(req.leaveId)} style={smallBtn('#dc3545')}>Reject</button>
+                                <button onClick={() => handleOpenRejectModal(req)} style={smallBtn('#dc3545')}>Reject</button>
                               </div>
                             ) : (
                               <span style={{ fontSize: '12px', color: '#6c757d' }}>Awaiting approval</span>

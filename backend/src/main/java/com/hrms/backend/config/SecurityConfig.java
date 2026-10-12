@@ -91,12 +91,13 @@ public class SecurityConfig {
 
                 // Leave requests - any signed-in user can view/file their own;
                 // admin/hr/manager can approve or reject; only admin/hr can edit or delete.
+                // Authenticated users can cancel their own pending requests (enforced in service).
                 .requestMatchers(HttpMethod.GET, "/api/leave-requests/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/leave-requests/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/leave-requests/*/approve").hasAnyRole("ADMIN", "HR", "MANAGER")
                 .requestMatchers(HttpMethod.PATCH, "/api/leave-requests/*/reject").hasAnyRole("ADMIN", "HR", "MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/leave-requests/**").hasAnyRole("ADMIN", "HR")
-                .requestMatchers(HttpMethod.DELETE, "/api/leave-requests/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers(HttpMethod.DELETE, "/api/leave-requests/**").authenticated()
 
                 // Leave balances - any signed-in user can view (own balance on their
                 // dashboard); only admin/hr can create/adjust/delete allotments.
