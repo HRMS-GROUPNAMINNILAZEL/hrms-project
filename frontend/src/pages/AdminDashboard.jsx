@@ -98,6 +98,10 @@ export default function AdminDashboard() {
   const pagedUsers = filteredUsers.slice((userPage - 1) * PAGE_SIZE, userPage * PAGE_SIZE);
 
   useEffect(() => {
+    if (user?.role !== 'admin' && activeTab === 'users') {
+      setActiveTab('dashboard');
+      return;
+    }
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -236,11 +240,11 @@ export default function AdminDashboard() {
       await updateEmployee(editingEmployee.employeeId, {
         firstName: empEditForm.firstName,
         lastName: empEditForm.lastName,
-        department: empEditForm.departmentId ? { departmentId: Number(empEditForm.departmentId) } : null,
+        departmentId: empEditForm.departmentId ? Number(empEditForm.departmentId) : null,
         position: empEditForm.position,
         // preserve the existing manager link - the edit form doesn't expose it,
         // and the backend overwrites manager unconditionally on update.
-        manager: editingEmployee.manager ? { employeeId: editingEmployee.manager.employeeId } : null,
+        managerId: editingEmployee.manager ? editingEmployee.manager.employeeId : null,
         hireDate: empEditForm.hireDate,
         status: empEditForm.status,
         contactNumber: empEditForm.contactNumber,
@@ -263,7 +267,7 @@ export default function AdminDashboard() {
       await deleteEmployee(emp.employeeId);
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to delete employee (they may have linked attendance, leave, or payroll records)');
+      setError(err.response?.data?.message || err.message || 'Failed to delete employee (they may have linked attendance or leave records)');
     }
   };
 
@@ -448,7 +452,7 @@ export default function AdminDashboard() {
 
   const handleApprove = async (id) => {
     try {
-      await approveLeaveRequest(id, user.userId);
+      if (!id || id === "undefined") { console.error("Invalid ID", id); return; } await approveLeaveRequest(id, user.userId);
       loadData();
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to approve leave request');
@@ -459,7 +463,7 @@ export default function AdminDashboard() {
     if (!window.confirm('Delete this leave request record?')) return;
     setError('');
     try {
-      await deleteLeaveRequest(req.leaveId);
+      await deleteLeaveRequest(req.leaveId || req._id);
       loadData();
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to delete leave request');
@@ -516,15 +520,22 @@ export default function AdminDashboard() {
             <SidebarItem itemKey="attrition" icon={<IconAttrition size={16} />} text="Attrition Risk" />
           </ul>
 
-          <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>System</div>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            <SidebarItem itemKey="users" icon={<IconUsers size={16} />} text="System Users" />
-          </ul>
+          {user?.role === 'admin' && (
+            <>
+              <div style={{ fontSize: '10px', fontWeight: '600', color: theme.textSecondary || theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 14px', marginBottom: '8px' }}>System</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                <SidebarItem itemKey="users" icon={<IconUsers size={16} />} text="System Users" />
+              </ul>
+            </>
+          )}
         </div>
         <div>
           <div style={{ padding: '12px 14px', backgroundColor: theme.cardBg, borderRadius: '12px', marginBottom: '10px', border: `1px solid ${theme.border}` }}>
             <div style={{ fontSize: '10px', color: theme.textSecondary || theme.textMuted, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Logged in as</div>
             <div style={{ fontSize: '13px', fontWeight: '600', color: theme.text }}>{user.username}</div>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: theme.primary, textTransform: 'uppercase', marginTop: '2px', letterSpacing: '0.05em' }}>
+              {user.role === 'admin' ? 'Administrator' : 'HR Specialist'}
+            </div>
           </div>
           <button
             onClick={logout}
@@ -631,7 +642,7 @@ export default function AdminDashboard() {
                       <option value="employee">Employee</option>
                       <option value="manager">Manager</option>
                       <option value="hr">HR</option>
-                      <option value="admin">Admin</option>
+                      {user?.role === 'admin' && <option value="admin">Admin</option>}
                     </select>
                   </div>
                 </div>
@@ -853,9 +864,13 @@ export default function AdminDashboard() {
                   <label style={label}>Department Head</label>
                   <select name="departmentHeadId" value={deptForm.departmentHeadId} onChange={handleDeptInputChange} style={input}>
                     <option value="">None</option>
-                    {employees.map(emp => (
-                      <option key={emp.employeeId} value={emp.employeeId}>{emp.firstName} {emp.lastName}</option>
-                    ))}
+                    {employees
+                      .filter(emp => deptModalMode === 'add' || emp.departmentId === editingDept?.departmentId || emp.employeeId === Number(deptForm.departmentHeadId))
+                      .map(emp => (
+                        <option key={emp.employeeId} value={emp.employeeId}>
+                          {emp.firstName} {emp.lastName} {emp.position ? `(${emp.position})` : ''}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -1092,7 +1107,7 @@ export default function AdminDashboard() {
                       <tr key={d.departmentId} style={row}>
                         <td style={td}>{d.departmentId}</td>
                         <td style={td}>{d.departmentName}</td>
-                        <td style={td}>{d.departmentHead ? `${d.departmentHead.firstName} ${d.departmentHead.lastName}` : 'None'}</td>
+                        <td style={td}>{d.departmentHead ? `${d.departmentHead.firstName} ${d.departmentHead.lastName}${d.departmentHead.position ? ` (${d.departmentHead.position})` : ''}` : 'None'}</td>
                         <td style={td}>
                           <button onClick={() => openEditDept(d)} style={smallBtn('#ffc107')}>Edit</button>
                           <button onClick={() => handleDeleteDept(d)} style={smallBtn('#dc3545')}>Delete</button>
@@ -1125,8 +1140,8 @@ export default function AdminDashboard() {
                     <tr><td colSpan="7" style={emptyRow}>No leave requests found.</td></tr>
                   ) : (
                     leaveRequests.map((req) => (
-                      <tr key={req.leaveId} style={row}>
-                        <td style={td}>{req.leaveId}</td>
+                      <tr key={req.leaveId || req._id} style={row}>
+                        <td style={td}>{req.leaveId || 'N/A'}</td>
                         <td style={td}>{req.employee ? `${req.employee.firstName} ${req.employee.lastName}` : 'N/A'}</td>
                         <td style={td}>{req.leaveType}</td>
                         <td style={td}>{req.startDate} to {req.endDate}</td>
@@ -1143,7 +1158,7 @@ export default function AdminDashboard() {
                           {req.status === 'pending' ? (
                             (user.role === 'admin' || user.role === 'hr' || user.role === 'manager') ? (
                               <div style={{ display: 'flex', gap: '6px' }}>
-                                <button onClick={() => handleApprove(req.leaveId)} style={smallBtn('#28a745')}>Approve</button>
+                                <button onClick={() => handleApprove(req.leaveId || req._id)} style={smallBtn('#28a745')}>Approve</button>
                                 <button onClick={() => handleOpenRejectModal(req)} style={smallBtn('#dc3545')}>Reject</button>
                               </div>
                             ) : (

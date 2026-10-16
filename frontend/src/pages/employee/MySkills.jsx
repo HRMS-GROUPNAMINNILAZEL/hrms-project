@@ -45,7 +45,7 @@ export default function MySkills({ employeeId }) {
           {!loading && mySkills.length === 0 && <tr><td style={emptyRow} colSpan={3}>No skills on file yet — ask HR to add what you know.</td></tr>}
           {!loading && mySkills.map(s => (
             <tr key={s.employeeSkillId} style={row}>
-              <td style={td}>{s.skill?.skillName}</td>
+              <td style={td}>{s.skill?.skillName || s.skillName || '—'}</td>
               <td style={{ ...td, textTransform: 'capitalize' }}>{s.proficiencyLevel}</td>
               <td style={td}>{s.acquiredDate}</td>
             </tr>
@@ -61,7 +61,7 @@ export default function MySkills({ employeeId }) {
           {!loading && gap.length === 0 && <tr><td style={emptyRow} colSpan={4}>No skill requirements defined for your role yet.</td></tr>}
           {!loading && gap.map((g, idx) => (
             <tr key={idx} style={row}>
-              <td style={td}>{g.skill?.skillName}</td>
+              <td style={td}>{g.skill?.skillName || g.skillName || '—'}</td>
               <td style={{ ...td, textTransform: 'capitalize' }}>{g.requiredLevel}</td>
               <td style={{ ...td, textTransform: 'capitalize' }}>{g.currentLevel || '— not on file —'}</td>
               <td style={td}><span style={gapStatusBadge(g.status)}>{g.status}</span></td>

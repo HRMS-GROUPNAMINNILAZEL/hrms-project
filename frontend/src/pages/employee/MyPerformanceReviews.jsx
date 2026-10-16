@@ -50,7 +50,7 @@ export default function MyPerformanceReviews({ employeeId }) {
           {!loading && reviews.length === 0 && <tr><td style={emptyRow} colSpan={4}>No performance reviews on file yet.</td></tr>}
           {!loading && reviews.map(r => (
             <tr key={r.reviewId} style={row}>
-              <td style={td}>{r.reviewer ? `${r.reviewer.firstName} ${r.reviewer.lastName}` : '—'}</td>
+              <td style={td}>{r.reviewer ? `${r.reviewer.firstName} ${r.reviewer.lastName}` : (r.reviewerName || '—')}</td>
               <td style={td}>{r.reviewPeriod}</td>
               <td style={{ ...td, color: ratingColor(r.rating), fontWeight: 'bold' }}>{r.rating ?? '—'} / 5</td>
               <td style={td}>{r.comments}</td>

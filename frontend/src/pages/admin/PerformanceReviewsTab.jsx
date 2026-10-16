@@ -64,8 +64,8 @@ export default function PerformanceReviewsTab() {
   const openEdit = (r) => {
     setEditing(r);
     setFormData({
-      employeeId: r.employee?.employeeId || '',
-      reviewerId: r.reviewer?.employeeId || '',
+      employeeId: r.employee?.employeeId || r.employeeId || '',
+      reviewerId: r.reviewer?.employeeId || r.reviewerId || '',
       reviewPeriod: r.reviewPeriod || '',
       rating: r.rating ?? '',
       comments: r.comments || ''
@@ -135,8 +135,8 @@ export default function PerformanceReviewsTab() {
           {!loading && reviews.length === 0 && <tr><td style={emptyRow} colSpan={6}>No performance reviews yet.</td></tr>}
           {!loading && reviews.map(r => (
             <tr key={r.reviewId} style={row}>
-              <td style={td}>{r.employee ? `${r.employee.firstName} ${r.employee.lastName}` : '—'}</td>
-              <td style={td}>{r.reviewer ? `${r.reviewer.firstName} ${r.reviewer.lastName}` : '—'}</td>
+              <td style={td}>{r.employee ? `${r.employee.firstName} ${r.employee.lastName}` : (r.employeeName || '—')}</td>
+              <td style={td}>{r.reviewer ? `${r.reviewer.firstName} ${r.reviewer.lastName}` : (r.reviewerName || '—')}</td>
               <td style={td}>{r.reviewPeriod}</td>
               <td style={{ ...td, color: ratingColor(r.rating), fontWeight: 'bold' }}>{r.rating ?? '—'} / 5</td>
               <td style={{ ...td, maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.comments}>{r.comments}</td>

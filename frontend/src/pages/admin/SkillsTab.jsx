@@ -219,8 +219,8 @@ export default function SkillsTab() {
               {employeeSkills.length === 0 && <tr><td style={emptyRow} colSpan={5}>No skills assigned yet.</td></tr>}
               {employeeSkills.map(es => (
                 <tr key={es.employeeSkillId} style={row}>
-                  <td style={td}>{es.employee ? `${es.employee.firstName} ${es.employee.lastName}` : '—'}</td>
-                  <td style={td}>{es.skill?.skillName}</td>
+                  <td style={td}>{es.employee ? `${es.employee.firstName} ${es.employee.lastName}` : (es.employeeName || '—')}</td>
+                  <td style={td}>{es.skill?.skillName || es.skillName || '—'}</td>
                   <td style={td}><span style={badge('#cce5ff', '#004085')}>{es.proficiencyLevel}</span></td>
                   <td style={td}>{es.acquiredDate}</td>
                   <td style={td}>
@@ -272,8 +272,8 @@ export default function SkillsTab() {
               {roleSkills.map(rs => (
                 <tr key={rs.id} style={row}>
                   <td style={td}>{rs.position}</td>
-                  <td style={td}>{rs.department?.departmentName || 'Any'}</td>
-                  <td style={td}>{rs.skill?.skillName}</td>
+                  <td style={td}>{rs.department?.departmentName || rs.departmentName || 'Any'}</td>
+                  <td style={td}>{rs.skill?.skillName || rs.skillName || '—'}</td>
                   <td style={td}><span style={badge('#e2e3e5', '#383d41')}>{rs.requiredLevel}</span></td>
                   <td style={td}>
                     <button style={smallBtn('#dc3545')} onClick={async () => { if (window.confirm('Delete this requirement?')) { await deleteRoleRequiredSkill(rs.id); loadAll(); } }}>Delete</button>
@@ -309,7 +309,7 @@ export default function SkillsTab() {
                 <tbody>
                   {gapResult.map((g, idx) => (
                     <tr key={idx} style={row}>
-                      <td style={td}>{g.skill?.skillName}</td>
+                      <td style={td}>{g.skill?.skillName || g.skillName || '—'}</td>
                       <td style={{ ...td, textTransform: 'capitalize' }}>{g.requiredLevel}</td>
                       <td style={{ ...td, textTransform: 'capitalize' }}>{g.currentLevel || '— not on file —'}</td>
                       <td style={td}><span style={gapStatusBadge(g.status)}>{g.status}</span></td>

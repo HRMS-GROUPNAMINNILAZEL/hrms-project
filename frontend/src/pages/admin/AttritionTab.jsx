@@ -107,7 +107,7 @@ export default function AttritionTab() {
           )}
           {!loading && indicators.map(i => (
             <tr key={i.indicatorId} style={row}>
-              <td style={td}>{i.employee ? `${i.employee.firstName} ${i.employee.lastName}` : '—'}</td>
+              <td style={td}>{i.employee ? `${i.employee.firstName} ${i.employee.lastName}` : (i.employeeName || '—')}</td>
               <td style={td}>{i.lateAttendanceCount30d}</td>
               <td style={td}>{i.leaveFrequency30d}</td>
               <td style={td}>{trendBadge(i.performanceTrend)}</td>

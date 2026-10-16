@@ -102,7 +102,7 @@ export const deleteSkill = (id) => api.delete(`/skills/${id}`).then(res => res.d
 
 // --- Employee Skill Endpoints ---
 export const getEmployeeSkills = (params) => api.get('/employee-skills', { params }).then(res => res.data);
-export const getSkillGapAnalysis = (employeeId) => api.get(`/employee-skills/gap-analysis/${employeeId}`).then(res => res.data);
+export const getSkillGapAnalysis = (employeeId) => api.get(`/employee-skills/gap-analysis/${employeeId}`).then(res => Array.isArray(res.data) ? res.data : (res.data?.analysis || []));
 export const createEmployeeSkill = (data) => api.post('/employee-skills', data).then(res => res.data);
 export const updateEmployeeSkill = (id, data) => api.put(`/employee-skills/${id}`, data).then(res => res.data);
 export const deleteEmployeeSkill = (id) => api.delete(`/employee-skills/${id}`).then(res => res.data);
